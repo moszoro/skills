@@ -17,16 +17,19 @@ version. No scattered copies to drift.
 
 ## Install
 
-**Whole collection (bare, so bare-name calls like `Invoke cove` / `evals:eval-tests` resolve):**
+**Full setup (recommended) — `verification-phase` needs more than the skills** (see [Dependencies](#dependencies)). One command installs the skills, the `evals` command, *and* every external dependency:
 
 ```bash
-git clone --depth 1 https://github.com/moszoro/skills /tmp/mm-skills
-cp -R /tmp/mm-skills/skills/*   ~/.claude/skills/
-cp -R /tmp/mm-skills/commands/* ~/.claude/commands/
-rm -rf /tmp/mm-skills
+curl -fsSL https://raw.githubusercontent.com/moszoro/skills/main/install.sh | bash
 ```
 
-**Edit-in-place (this repo stays the source of truth):** clone once, then symlink into `~/.claude`:
+**Skills only (quick)** — the three skills, bare, via the [`skills`](https://github.com/vercel-labs/skills) CLI (does **not** install the `evals` command or `verification-phase`'s external deps):
+
+```bash
+npx skills add moszoro/skills --global
+```
+
+**Edit-in-place (this repo stays the source of truth)** — clone once, then symlink into `~/.claude`:
 
 ```bash
 git clone https://github.com/moszoro/skills ~/Projects/skills
@@ -37,6 +40,20 @@ ln -sfn ~/Projects/skills/commands/evals ~/.claude/commands/evals
 ```
 
 Now editing `~/.claude/skills/cove/SKILL.md` edits the repo working tree — `git commit && git push` and it's live everywhere.
+
+## Dependencies
+
+`verification-phase` is a gauntlet that orchestrates other skills — its Preflight fails loud unless all
+of these resolve. `install.sh` installs every one; `npx skills add` does **not**:
+
+| dependency | source | provided by |
+|---|---|---|
+| `cove`, `evals:eval-tests` | this repo | `install.sh` (command needs a copy — it's not a skill) |
+| `fullstack-dev-skills:code-reviewer` / `security-reviewer` | `jeffallan/claude-skills` marketplace | `install.sh` step 3 |
+| `andrej-karpathy-skills:karpathy-guidelines` | `forrestchang/andrej-karpathy-skills` marketplace | `install.sh` step 3 |
+| context7 MCP | `@upstash/context7-mcp` | `install.sh` step 4 (needs `CONTEXT7_API_KEY`) |
+
+`cove` and `eli5` are standalone — `npx skills add` is enough for those.
 
 ## Credits
 

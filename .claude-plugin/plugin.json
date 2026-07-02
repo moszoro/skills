@@ -1,0 +1,9 @@
+{
+  "name": "moszoro-skills",
+  "description": "Maciej Moszoro's personal Claude Code skills — verification-phase, cove, eli5.",
+  "skills": [
+    "./skills/verification-phase",
+    "./skills/cove",
+    "./skills/eli5"
+  ]
+}
