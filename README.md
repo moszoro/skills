@@ -2,9 +2,8 @@
 
 > Maciej Moszoro's personal Claude Code skills — **one source of truth.**
 
-Edit a skill once, here; every consumer (your local `~/.claude`, the
-[nightshift](https://github.com/moszoro/nightshift) loop image, any teammate) pulls the same
-version. No scattered copies to drift.
+Edit a skill once, here; every consumer (your local `~/.claude`, CI images, teammates) pulls the
+same version. No scattered copies to drift.
 
 ## What's here
 
