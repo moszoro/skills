@@ -123,6 +123,14 @@ Run this for every step. `{reviewer}`, `{prompt}`, and the step number come from
    gold-plated fixes, surface hidden assumptions, keep every surviving change surgical, and
    restate each kept fix as a verifiable change. Tag each finding **KEEP** or **CUT (reason)**.
    If it cut everything, the step is clean — record that and move on.
+   **Grep the project rules BEFORE tagging any finding CUT** — `CLAUDE.md`/`AGENTS.md`, `docs/adr/`,
+   and the session's recalled memories — for a rule that *mandates* the change. If a project rule
+   requires it (e.g. No-Magic-Strings, Display-Ready/ADR-026, Test-First/ADR-011), the finding is
+   **KEEP regardless of the simplicity heuristic** — a project rule overrides karpathy's
+   anti-over-engineering bias. Cite the rule (file+section) on the KEEP. Only genuinely
+   rule-unbacked polish is eligible for CUT. (Source: 2026-07-05 phase6-10 — karpathy CUT a
+   "verbs are magic strings" finding as churn-for-purity; the project's intent was the opposite,
+   and the CUT hid a real latent bug. A rules-grep before CUT prevents that class of miss.)
 
 3. **cove gate (conditional).** Run `cove` on this step's KEPT findings **only if both** hold:
    the change is on a critical surface (Activation step 2) **and** ≥1 finding survived karpathy.
