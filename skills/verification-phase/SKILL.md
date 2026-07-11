@@ -1,6 +1,6 @@
 ---
 name: verification-phase
-description: Layered code-verification gauntlet with karpathy + cove gating. Use when the user says "run VerificationPhase", "verify this phase", or wants a multi-lens review (preflight → test-quality → smells → security → docs-best-practices → project-rules) that filters every recommendation through karpathy-guidelines, escalates critical findings to cove, and auto-applies the survivors.
+description: Layered code-verification gauntlet with karpathy + cove gating. Use when the user says "run VerificationPhase", "verify this phase", or wants a multi-lens review (preflight → test-quality → smells → security → docs-best-practices → project-rules) that filters every recommendation through karpathy-guidelines, escalates critical findings to cove, and auto-applies the survivors. Supports a `--fast` reduced pass — built-in code-review + context7 best-practices + eval-tests — for quick static re-checks (e.g. as qa-phase's closing gate).
 ---
 
 # VerificationPhase
@@ -15,7 +15,10 @@ best-practices via context7, (4) project-rules-and-learnings conformance; finall
 lens's recommendations are filtered through `andrej-karpathy-skills:karpathy-guidelines`;
 critical-surface findings that survive are double-checked with `cove` before anything is applied.
 A closing **skill-invocation gate** proves from the session transcript that every required skill
-was actually invoked in-window, and re-invokes any that were skipped.
+was actually invoked in-window, and re-invokes any that were skipped. A **`--fast`** variant
+(`## Fast mode`) runs a reduced 3-lens pass — built-in `code-review` + context7 best-practices +
+`eval-tests`, with karpathy/cove still gating — for quick static re-checks after an auto-fix loop
+or as another gauntlet's closing gate.
 
 **How:** Preflight → a shared per-step pipeline (review → karpathy filter → conditional cove →
 auto-apply → log) for all four lenses → eval-tests gate → skill-invocation gate → a dated report
@@ -84,6 +87,12 @@ This skill is a prompt, not a code-enforced workflow — completeness is on you.
 4. Run, in order: **Preflight** → the four steps via `## Per-step pipeline` → **Test-quality
    gate** → **Skill-invocation gate** → **Report**. Do not parallelize the steps — later lenses
    read earlier results, and applied fixes change what the next lens sees.
+
+5. **Fast mode.** If `$ARGUMENTS` contains `fast` or `--fast`, run `## Fast mode` INSTEAD of
+   steps 1-4 above: a reduced pass (built-in `code-review` + context7 + `eval-tests`) that keeps
+   the karpathy/cove gating but drops the security lens, the project-rules lens, and the
+   transcript skill-invocation gate. Everything else in this Activation (scope, critical-surface
+   detection, report path) still applies.
 
 ## Preflight — required skills & tools
 
@@ -301,6 +310,41 @@ through.
    gate **"degraded (manual)"** in the report — never silently pass.
 5. **Log** the gate's audit line to the report (which skills were transcript-verified in-window,
    and which were re-invoked to close a gap).
+
+## Fast mode (`fast` / `--fast`)
+
+A reduced, gate-light pass for a **quick static re-check** — after an auto-fix loop, or as
+another gauntlet's closing gate (this is exactly how `qa-phase` invokes it). It runs two review
+lenses instead of four and drops the transcript gate; it KEEPS the karpathy + cove gating so no
+unverified or over-engineered fix is applied.
+
+1. **Preflight (reduced).** Confirm available this session, halt loud on any MISSING:
+   the built-in **`code-review`** skill; context7 MCP tools
+   (`mcp__plugin_context7_context7__resolve-library-id` + `query-docs`); `evals:eval-tests`;
+   `andrej-karpathy-skills:karpathy-guidelines`; `cove`. `security-reviewer` and the project-rules
+   lens are **not** used in fast mode — do not require them.
+
+2. **Lens F1 — correctness + cleanup (`code-review`).** Invoke the built-in `code-review` skill
+   over the resolved scope at `high` effort, **without `--fix`** (findings only — they route
+   through this skill's own gating, not code-review's auto-apply). Collect each finding with
+   file:line + proposed fix.
+
+3. **Lens F2 — docs-grounded best practices (context7).** Same intent as Step 3 of full mode:
+   `resolve-library-id` then `query-docs` for the libraries/frameworks in scope, and ground each
+   finding in what the docs actually say. A "best practice" with no doc citation is a CUT candidate.
+
+4. **Gate F1 and F2 through `## Per-step pipeline`** (karpathy filter → conditional cove →
+   auto-apply → atomic commit → log) — identical gating to full mode. Grep project rules before any
+   CUT, same as Step 2 of the pipeline.
+
+5. **Test-quality gate — `evals:eval-tests`**, run last, exactly as full mode's gate.
+
+6. **Report** to the same bound path with a `**Mode:** fast` line; the four step-tables collapse to
+   F1 / F2. **Skip the transcript skill-invocation gate** — fast mode trades that enforcement for
+   speed; state that plainly in the report so no one mistakes it for a full run.
+
+Use **full mode** (not fast) when the change touches a critical surface and you want the dedicated
+security lens, the project-rules lens, and the un-spoofable transcript gate.
 
 ## Report
 
