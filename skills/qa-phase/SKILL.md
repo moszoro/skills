@@ -319,9 +319,17 @@ are the tests still quality" pass — not a fresh full audit.
 
 ## Evidence gate — `verification-before-completion`
 
-Invoke `superpowers:verification-before-completion`: run the FULL suite / lint / typecheck fresh,
-capture the output, confirm exit codes. No green claim without this evidence. If it fails, that is
-a gate finding — fix (one bounded round) or carry to the GATE as a blocker.
+**FIRE it via the `Skill` tool.** Invoke `superpowers:verification-before-completion`: the FULL suite /
+lint / typecheck run happens **inside** the skill — you capture the output, confirm exit codes, and it
+gates the green claim. **Running `pytest` (or the build/lint) yourself in bash and calling it "the
+evidence gate" does NOT satisfy this step** — same rule as A2 ("running pytest yourself ≠ A2"); the
+suite-run lives *inside* the skill, a bash run is not a substitute. The Skill-invocation gate below
+lists `superpowers:verification-before-completion` as **REQUIRED** — do NOT drop it from that checklist;
+it re-invokes the skill if the transcript doesn't show it. No green claim without this evidence. If it
+fails, that is a gate finding — fix (one bounded round) or carry to the GATE as a blocker.
+(Source: 2026-07-13 phase6-2-2 — the evidence gate was skipped by running `pytest` in bash and labeling
+it the gate, and the skill-invocation scan had ALSO dropped `verification-before-completion` from its
+required list, so nothing caught it. Both holes closed here.)
 
 ## Closing grill — conditional (re-grill when the fixes were extensive)
 
@@ -524,6 +532,11 @@ Write to the bound path; echo the **Summary** + the gate question inline. Skelet
   ≠ A1. Each lens is a `Skill` invocation (see `## Canonical lens prompts`); the Skill-invocation gate
   catches this and re-invokes. Condensing/paraphrasing a lens is a FAILED run.
 - Swapping A2 off `bmad-qa-generate-e2e-tests` to the generic `/qa` — the qa lens is locked to bmad.
+- **Running `pytest`/the suite yourself and calling it the evidence gate** instead of firing
+  `superpowers:verification-before-completion` via the `Skill` tool — the suite-run lives INSIDE that
+  skill; a bash run is NOT the gate (mirrors "running pytest yourself ≠ A2"). Equally: **dropping
+  `verification-before-completion` (or any required skill) from the Skill-invocation gate's checklist** —
+  that's how a skipped evidence gate goes uncaught.
 - **Shipping extensive fixes without the closing grill** — the first grill validated pre-fix code; a
   reversal or new code path in the Fix loop can birth gaps only a post-fix re-grill catches.
 - Skipping the Skill-invocation gate, or marking it passed from memory instead of the transcript.
