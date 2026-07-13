@@ -132,6 +132,20 @@ records which experts are present; that verified set IS the GREEN allowlist. Too
 resolve in this session's skill list — a configured-but-missing skill is a HALT, never a silent
 fallback (the config is an explicit choice; honor it or stop).
 
+**Detecting native (`bmad-*`) skills — a `~/.claude`-only search MISSES them (real footgun).**
+Native project skills are installed **project-scoped** under `<repo>/.claude/skills/`, and in a
+**multi-worktree** checkout they live in the session's **origin** worktree's `.claude/skills/` —
+NOT necessarily the current worktree, and NOT under `~/.claude`. So `find ~/.claude -iname '*bmad*'`
+returns empty even when bmad IS available → **do NOT conclude "no bmad" from a HOME-only search.**
+Detect natives, in order: (a) **`_bmad/` at the repo root ⇒ bmad IS the intended kit** (resolve
+`qa_session`→`bmad-qa-generate-e2e-tests`, `spec_gap`→`bmad-code-review`, `sprint_sync`→
+`bmad-sprint-status`, etc.); (b) scan `<repo>/.claude/skills/` **and**
+`<repo>/.claude/worktrees/*/.claude/skills/`; (c) the definitive test — **attempt the `Skill`
+invocation** (it only launches if installed). A2 is LOCKED to bmad when present — a search
+false-negative that silently downgrades A2 to the generic qa lens is a **FAILED preflight**.
+(Source: 2026-07-13 phase6-2-2 — a `~/.claude`-only find wrongly reported "no bmad"; bmad lived in
+the origin worktree's `.claude/skills/` and `_bmad/` was at the repo root the whole time.)
+
 Record a Preflight line per dependency `available` / `MISSING`, and the **resolved kit** (which
 skill each phase will actually use). Availability ≠ invocation — each phase still invokes its skill
 fresh.
@@ -157,8 +171,12 @@ preview     = "local"                   # backend story → ACs run against a lo
 ```
 
 **Resolution per phase:** ① config value (halt if it names a missing skill) → ② auto-detect a
-native skill (scan the session skill list for `bmad-*`/project-prefixed matches) → ③ generic
-fallback. Log the resolved choice for each phase in the report.
+native skill: check **`_bmad/` at the repo root** (its presence ⇒ the bmad kit is intended) and scan
+the **project-scoped** skill dirs — `<repo>/.claude/skills/` + `<repo>/.claude/worktrees/*/.claude/skills/`,
+NOT `~/.claude` (see Preflight's native-detection footgun) — for `bmad-*`/project-prefixed matches;
+when a filesystem scan is inconclusive, **try the `Skill` invocation directly** (definitive) → ③ generic
+fallback. Log the resolved choice for each phase in the report. **A `_bmad/`-present repo that resolves
+A2 to the generic qa lens is a preflight bug, not a valid fallback.**
 
 **Map by capability, not name.** Before treating a native skill as a phase's reviewer, confirm it
 actually does that phase's *job* — a `*-review-*` skill that only reads a diff cannot stand in for a
