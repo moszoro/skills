@@ -433,6 +433,12 @@ through.
      applied ≥1 fix. If zero fixes, record "no fixes → design skills correctly not fired."
    - `cove` — **conditional**: required only if a critical-surface finding survived karpathy. Otherwise
      record "cove: correctly not fired."
+   - `superpowers:finishing-a-development-branch` — **conditional**: required in-window ONLY if the GATE
+     returned **Ship** (Phase C ran). A "Ship" with NO `finishing-a-development-branch` invocation means the
+     branch was merged/PR'd **by hand** (`gh pr merge`, a manual push) instead of firing the ship skill —
+     the same substitution as running `pytest` for the evidence gate. Re-ship through the skill, or record
+     why it was genuinely N/A. Also confirm the Phase-C **deferral-sync ran** (new/closed deferrals actually
+     mirrored to GitHub during Phase C, plan tasks ticked) — not left for "later."
 3. **If any required (non-conditionally-skipped) skill is absent:** invoke it now against the relevant
    lens's scope with its canonical prompt, apply + log, and re-run step 1. **Do not proceed to Phase B
    / the GATE until the gate is green.**
@@ -471,8 +477,11 @@ This is the only place QAPhase stops for you.
    plan, reconcile deferred items (note new, close resolved, adjust if scope changed), **mirror
    new/closed deferrals to GitHub issues** (`gh`), and update sprint/story status. Confirm each
    write landed (re-read the doc / `gh issue view`) before moving on.
-2. **Ship.** `superpowers:finishing-a-development-branch`: verify tests, mark the PR ready, and
-   complete per its menu (merge/PR).
+2. **Ship — FIRE the skill, do NOT merge by hand.** Invoke `superpowers:finishing-a-development-branch`
+   via the `Skill` tool: it verifies tests, marks the PR ready, and completes per its menu (merge/PR).
+   **Running `gh pr merge` / pushing the merge yourself is NOT shipping via the skill** — the same
+   substitution the evidence gate forbids (a bash run ≠ firing the skill). The Skill-invocation gate lists
+   `finishing-a-development-branch` as REQUIRED whenever the GATE returned Ship.
 
 ## As a Workflow (multi-agent)
 
@@ -555,6 +564,10 @@ Write to the bound path; echo the **Summary** + the gate question inline. Skelet
   stop; carry blockers to the gate instead.
 - Proceeding past a MISSING dependency or a configured-but-missing skill — halt, don't degrade.
 - Merging, marking a PR ready, or writing to GitHub **before** the gate returns "Ship."
+- **Shipping by hand** (`gh pr merge` / a manual push) instead of firing `superpowers:finishing-a-development-branch`,
+  OR **leaving the Phase-C deferral-sync for "later"** (new/closed deferrals not mirrored to GitHub + plan
+  tasks not ticked during Phase C) — both are the same skip-the-skill / defer-the-work substitution the
+  evidence gate forbids; the Skill-invocation gate now checks `finishing-a-development-branch` on Ship.
 - Applying a fix that karpathy cut or cove refuted, or a fix without a failing test first.
 - A fast-verify "best practice" with no context7 citation, or a spec gap (A1) not grounded in the story.
 - Running eli5 (A4) only at the gate — it runs in Phase A so its live-scenario gaps can be fixed this run.
