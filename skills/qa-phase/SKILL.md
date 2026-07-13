@@ -388,23 +388,34 @@ through.
        return False
    base = os.path.expanduser("~/.claude/projects")
    transcripts = sorted(glob.glob(base + "/*/*.jsonl"), key=os.path.getmtime, reverse=True)
-   tx = lines = start = None
-   for f in transcripts:                       # newest-first → active session matches first
+   def scan(ls, start):                        # in-window Skill/context7 invocations for a candidate
+       s = set()
+       for l in ls[start:]:
+           o = load(l)
+           if not o: continue
+           for it in items_of(o):
+               if it.get("type") == "tool_use" and it.get("name") == "Skill":
+                   s.add("skill:" + str((it.get("input") or {}).get("skill")))
+               if it.get("type") == "tool_use" and "context7" in (it.get("name") or ""):
+                   s.add("tool:context7")
+       return s
+   # Score EVERY transcript that contains a start marker by its in-window Skill count and pick the
+   # RICHEST — do NOT just take the newest file with a marker. A DIFFERENT session (or one that merely
+   # QUOTES "/qa-phase" in text, or an earlier stale run) can be newer and win, yielding a false
+   # "all MISSING". The active run is the one with THIS run's lens invocations after its last marker.
+   # (Source: 2026-07-13 phase6-2-2 — a simplified `txs[0]` scan grabbed another session's newer
+   # transcript and reported every skill MISSING; scoring by in-window Skill count is the un-foolable pick.)
+   best = None   # (num_in_window_skills, -mtime_rank, tx, ls, start, seen)
+   for rank, f in enumerate(transcripts):
        ls = open(f, errors="ignore").read().splitlines()
        hits = [i for i, l in enumerate(ls) if (o := load(l)) and is_start(o)]
-       if hits:
-           tx, lines, start = f, ls, hits[-1]; break
-   if tx is None:
+       if not hits: continue
+       start = hits[-1]; seen = scan(ls, start)
+       cand = (len(seen), -rank, f, ls, start, seen)   # most skills wins; tie → newer (smaller rank)
+       if best is None or cand[:2] > best[:2]: best = cand
+   if best is None:
        print("GATE-DEGRADED: no /qa-phase invocation found in", len(transcripts), "transcripts"); raise SystemExit
-   seen = set()
-   for l in lines[start:]:
-       o = load(l)
-       if not o: continue
-       for it in items_of(o):
-           if it.get("type") == "tool_use" and it.get("name") == "Skill":
-               seen.add("skill:" + str((it.get("input") or {}).get("skill")))
-           if it.get("type") == "tool_use" and "context7" in (it.get("name") or ""):
-               seen.add("tool:context7")
+   _, _, tx, lines, start, seen = best
    print("transcript:", os.path.basename(tx), "| window-start-line:", start)
    print("in-window:", sorted(seen))
    PY
