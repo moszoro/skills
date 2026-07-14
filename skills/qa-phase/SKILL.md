@@ -241,6 +241,27 @@ its whole body is *"Run a `/grilling` session, using `/domain-modeling`,"* and *
 - **FIRE (canonical prompt):** invoke `fullstack-dev-skills:chaos-engineer` with
   *"try to break it, prove the architecture is wrong, and vulnerable, has holes, is not performing etc"*.
   Ad-hoc probes you reason up yourself do NOT satisfy A3 — the skill must fire (transcript-checked).
+- **Firing the skill ≠ doing chaos — a thin pass FAILS the lens.** The `chaos-engineer` skill is
+  infra-shaped (K8s / toxiproxy / Chaos Monkey examples); it does NOT hand you app-level experiments —
+  YOU translate its mandate into THIS feature's real failure surface. A pass that runs 1-2 probes and
+  declares "0 findings" is a **FAILED chaos lens**, not a clean one, and "the earlier phases / a prior
+  static review already covered it" is NOT a substitute for a dynamic experiment. (Source: 2026-07-15
+  cv3 — chaos fired the right prompt, then ran only 2 experiments; the real surface had ~11 and the ship
+  gate was rightly rejected.) **Enumerate the feature's failure surface, then probe EVERY applicable
+  category below — minimum ≥6 experiments across ≥4 categories**; a category that genuinely doesn't apply
+  is recorded `N/A: <why>`, never silently skipped. For each: hypothesis → run → PASS (survived) /
+  FINDING (broke).
+  1. **Input adversarials** — malformed / missing / wrong-type fields, numeric **overflow / NaN / Inf /
+     negative**, **float-precision at boundaries** (`== 2×t`, `≥`/`>` edges), colliding same-timestamp
+     records, injection (NUL byte, `'; DROP …`), oversized values.
+  2. **State / invariant breaking** — idempotency under re-run, CAS / lost-update, relax-to-null, forgery /
+     client-supplied-trust bypass, enum / constraint drift (persist an out-of-enum value → must reject).
+  3. **Concurrency** — a **REAL 2-connection barrier race** (two separate DB connections synchronized on a
+     barrier), NOT `asyncio.gather` on one event-loop/session (one connection can't race itself →
+     tautological green); plus cross-verb races (e.g. generate + transition on the same row).
+  4. **Infra / resilience** — DB pause / kill mid-op (timeout vs **hang** — a known Aura hole),
+     connection-pool exhaustion, migration **replay WITH data present** (downgrade→upgrade on populated rows).
+  5. **Perf cliff** — large input (1000s of records) → O(n²) / pass-multiplication cliffs.
 - **Do NOT substitute static review for chaos.** `bmad-review-adversarial-general` (cynical static
   review) and `bmad-review-edge-case-hunter` (static path tracer) **execute nothing** — they are
   `static_boosters` folded into A1/A2, never the chaos skill. Kit skills are mapped by **capability,
