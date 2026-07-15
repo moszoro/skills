@@ -45,8 +45,8 @@ This skill orchestrates other skills and (when available) runs as a multi-agent 
 Completeness and the single-stop discipline are on you:
 
 - **First action:** create a TodoWrite with one item per gate/phase below, in order:
-  Preflight · A1 spec-gap · A2 QA-session · A3 chaos · A4 prove-beyond-tests · Fix-loop ·
-  fast-verify · evidence · closing-grill (if fixes extensive) · **skill-invocation gate** ·
+  Preflight · A1 spec-gap · A2 QA-session · A3 chaos · **A4a eli5-narrative · A4b real-world-scenario-run**
+  (two items) · Fix-loop · fast-verify · evidence · closing-grill (if fixes extensive) · **skill-invocation gate** ·
   B draft-PR · B preview-AC · **GATE** · C sprint-sync · C ship. Mark each in-progress → complete.
 - **One SHIP stop — plus the A1 grill.** The single **ship** GATE is the only place QAPhase stops for
   the *ship* decision. **EXCEPTION (default): the A1 spec-gap grill is INTERACTIVE** — it interviews the
@@ -284,12 +284,24 @@ its whole body is *"Run a `/grilling` session, using `/domain-modeling`,"* and *
 ### A4 — Prove-beyond-tests: live scenarios + plain-language proof *(your `/eli5` step — runs BEFORE fixes)*
 - **Skill:** `eli5` + real-world scenario execution (the project's manual-scenario practice, e.g.
   Aura's `CLAUDE.md` "Real-World Scenario Tests (beyond pytest)").
-- **FIRE (two canonical prompts):**
-  (1) invoke `eli5` with *"what we delivered with this story, what we proved, why this was important,
-  how we can prove it works besides tests"*; and
-  (2) run the scenarios with *"write real world scenarios, run those tests to prove that the system is
-  working beyond tests, and also try to find gaps, edge cases"*.
-  Writing the narrative yourself without firing `eli5` does NOT satisfy A4 (transcript-checked).
+- **A4 is TWO SEPARATE, BOTH-MANDATORY deliverables — neither satisfies the other:**
+  - **A4a — the eli5 narrative.** Invoke `eli5` with *"what we delivered with this story, what we proved,
+    why this was important, how we can prove it works besides tests"*. Writing the narrative yourself
+    without firing `eli5` does NOT satisfy A4a (transcript-checked).
+  - **A4b — the real-world-scenario RUN.** With *"write real world scenarios, run those tests to prove
+    that the system is working beyond tests, and also try to find gaps, edge cases"*: **WRITE NEW
+    scenarios** (numbered `RW1..RWn`, real end-to-end operator workflows) that the existing suite does
+    NOT already cover, **RUN them** against the live system (dev server + browser / real DB / real HTTP —
+    per the project's "Real-World Scenario Tests" convention), and **capture PASS/FAIL + the gaps/edge
+    cases they surface**. This is a **deliberate gap-HUNT**, not a re-run — at least one scenario must
+    probe a path the unit + A2 suites don't (a failed-refresh blank, a stale-while-revalidate hole, an
+    error→retry→recover loop, a keyboard-only flow, a viewport guard, an enum-drift-at-scale render).
+  - **The un-skippable rule (this is the whole point of gating A4b):** firing `eli5` (A4a) does NOT
+    satisfy A4b, and **"the A2/existing e2e already ran" does NOT satisfy A4b** — A4b requires NEW
+    scenarios AUTHORED and EXECUTED *this run* with captured results. Substituting the eli5 narrative,
+    or pointing at pre-existing tests, for the scenario run is a **FAILED A4** the Skill-invocation gate
+    re-opens (see A4b in `## Skill-invocation gate`). Record A4b's results in the report as
+    **"real-world scenarios: N run · P pass / F fail · gaps: …"**.
 - **Goal:** prove the feature works **besides the automated tests** — write and *run* real-world/live
   scenarios (cross-process races, real Postgres index plans, real serialization round-trips, failure
   resilience — what the unit suite can't see) that exercise the story end-to-end, and capture the
@@ -458,7 +470,24 @@ through.
      grill trigger fired (extensive fixes); `grilling` appearing only once then is a gate miss.
    - `bmad-qa-generate-e2e-tests` (A2 — the bmad qa lens; NOT the generic `/qa`)
    - `fullstack-dev-skills:chaos-engineer` (A3)
-   - `eli5` (A4)
+   - `eli5` (A4a — the narrative)
+   - **A4b — the real-world-scenario RUN (NOT a skill → gated by ARTIFACT + EXECUTION, not transcript
+     skill-detection).** A4b is required for EVERY run and is the one most often silently skipped
+     ("eli5 fired, so A4 is done" / "the existing e2e already ran"). It is satisfied ONLY when BOTH hold,
+     proven this run:
+       (a) **NEW scenarios were authored this run** — a real-world-scenario artifact created/modified in
+       this run's diff (e.g. `git status` shows a new `*real-world*`/`*realworld*`/`*scenario*` spec or a
+       `docs/…-scenario-results.md`, or committed `RW1..RWn` cases). Reusing only pre-existing tests FAILS.
+       (b) **they were EXECUTED this run with captured PASS/FAIL** — the transcript shows the scenario
+       run command (the e2e/scenario runner over that artifact) AND the report carries the
+       **"real-world scenarios: N run · P pass / F fail · gaps: …"** line.
+     Check both with e.g.
+     `git status --porcelain | grep -iE 'real-?world|scenario'` and a transcript scan for the scenario
+     run + the report line. **If either is missing: STOP and DO A4b now** — author NEW gap-hunting
+     scenarios, run them live, capture results, feed any gaps to the Fix loop — then re-check. Do not
+     proceed to Phase B / the GATE with A4b unproven. (Source: 2026-07-15 phase6-3 — a run fired `eli5`
+     but substituted "the e2e already ran" for A4b; the real-world pass, once actually done, found a
+     failed-refresh-blanks-the-queue bug the whole suite had missed.)
    - `andrej-karpathy-skills:karpathy-guidelines` (the per-lens filter)
    - `verification-phase` (fast-verify) · `superpowers:verification-before-completion` (evidence)
    - `codebase-design` **and** `design-tests` — **conditional**: required in-window only if the Fix loop
@@ -560,8 +589,9 @@ Write to the bound path; echo the **Summary** + the gate question inline. Skelet
 {scenarios run + pass/fail evidence}
 ## A3 Chaos — {skill}
 {findings + adversarial-verify verdicts}
-## A4 Prove-beyond-tests (eli5) — live scenarios + narrative
-{scenarios run + pass/fail · the delivered/proved/why/how narrative (reused as the gate summary)}
+## A4 Prove-beyond-tests — A4a eli5 narrative + A4b real-world scenarios
+{A4a: the delivered/proved/why/how narrative (reused as the gate summary)}
+**A4b real-world scenarios: {N} run · {P} pass / {F} fail · gaps: {list or none}** {← MANDATORY line — NEW scenarios authored + run this run, not the pre-existing suite}
 
 ## Fixes (design-first, TDD)
 | finding | lens | seam (codebase-design) | red test | GREEN expert | verify |
@@ -583,6 +613,12 @@ Write to the bound path; echo the **Summary** + the gate question inline. Skelet
   Running pytest yourself ≠ A2; ad-hoc chaos probes ≠ A3; a hand-written narrative ≠ A4; gap analysis
   ≠ A1. Each lens is a `Skill` invocation (see `## Canonical lens prompts`); the Skill-invocation gate
   catches this and re-invokes. Condensing/paraphrasing a lens is a FAILED run.
+- **Firing `eli5` (A4a) and calling A4 done — skipping the real-world-scenario RUN (A4b).** A4 has TWO
+  deliverables; the narrative is not the scenarios. "The A2 / existing e2e already ran" does NOT satisfy
+  A4b either — A4b requires NEW gap-hunting scenarios AUTHORED and EXECUTED this run with captured
+  PASS/FAIL. The Skill-invocation gate's A4b check (artifact-in-diff + execution + report line) re-opens
+  a skipped A4b. (This is a top offender — the scenario run is where the failed-refresh / stale-state /
+  error-recovery holes the unit suite can't see actually get found.)
 - Swapping A2 off `bmad-qa-generate-e2e-tests` to the generic `/qa` — the qa lens is locked to bmad.
 - **Running `pytest`/the suite yourself and calling it the evidence gate** instead of firing
   `superpowers:verification-before-completion` via the `Skill` tool — the suite-run lives INSIDE that
