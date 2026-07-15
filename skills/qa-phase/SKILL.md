@@ -7,8 +7,10 @@ description: Autonomous acceptance-and-ship QA gauntlet. Use when the user says 
 
 ## Overview
 
-**What:** Proves a *finished story* works end-to-end and then ships it — fully autonomously up
-to a single decision. It runs three proof lenses (spec-gap, an API+UI+E2E QA session, chaos),
+**What:** Proves a *finished story* works end-to-end and then ships it — autonomously except two
+interactive points: the **A1 spec-gap grill** (which interviews the user for the genuine design/scope
+decisions the spec-vs-code gaps surface — facts are looked up from code, not asked) and the single
+**ship** decision at the gate. It runs three proof lenses (spec-gap, an API+UI+E2E QA session, chaos),
 auto-fixes what they find through a **design-first micro-cycle** (design the fix → write a failing
 regression test → implement via the right domain expert → verify), re-checks the result with
 `verification-phase --fast`, gathers fresh evidence, opens a **draft PR**, and runs the story's
@@ -46,9 +48,15 @@ Completeness and the single-stop discipline are on you:
   Preflight · A1 spec-gap · A2 QA-session · A3 chaos · A4 prove-beyond-tests · Fix-loop ·
   fast-verify · evidence · closing-grill (if fixes extensive) · **skill-invocation gate** ·
   B draft-PR · B preview-AC · **GATE** · C sprint-sync · C ship. Mark each in-progress → complete.
-- **One stop only.** Nothing before the GATE may ask the user a question. If a lens is genuinely
-  blocked (missing config, no preview mechanism, un-resolvable AC), record it and carry it *to the
-  gate* — do not interrupt mid-run. The only exception is a Preflight halt (below).
+- **One SHIP stop — plus the A1 grill.** The single **ship** GATE is the only place QAPhase stops for
+  the *ship* decision. **EXCEPTION (default): the A1 spec-gap grill is INTERACTIVE** — it interviews the
+  user for the genuine DESIGN / SCOPE decisions the spec-vs-code gaps surface, one question at a time
+  (`spec_gap_mode = grill`, the default). It obeys the grilling rule: **a fact resolvable from the code is
+  looked up, never asked; a decision is the user's** — so it stops only for real decisions, not facts, and
+  recommends an answer for each. Everything ELSE before the GATE (A2/A3/A4, fix-loop, verify) stays
+  hands-off: if one of those is blocked (missing config, no preview, un-resolvable AC), record it and
+  carry it to the gate — do not interrupt mid-run. Set `spec_gap_mode = auto` for a fully hands-off run
+  (A1 becomes non-interactive, its decisions deferred to the ship gate). A Preflight halt is the other stop.
 - **Fail loud, never silently degrade.** A missing required dependency, a config that names a
   skill that isn't installed, or a gate that cannot run → STOP and report. Do not "work around."
 - **Fresh invocation is mandatory — with the canonical prompt.** Every resolved skill — each lens's
@@ -158,7 +166,7 @@ Generic skills ship as baked-in defaults. A project declares native skills in
 ```toml
 [skills]
 spec_gap        = "bmad-code-review"                     # AUTO-mode gap reviewer; else fullstack-dev-skills:code-reviewer + Explore
-spec_gap_mode   = "auto"                                 # "auto" = non-interactive gap analysis (keeps ONE stop). "grill" = run grill-with-docs LIVE at A1 (grilling + domain-modeling), interactive, adds one early stop
+spec_gap_mode   = "grill"                                # DEFAULT "grill" = run grill-with-docs LIVE at A1 (grilling + domain-modeling), INTERACTIVE — interview the user for the genuine decisions (facts looked up from code, never asked; a decision is the user's). "auto" = non-interactive gap analysis, fully hands-off (decisions deferred to the ship gate)
 qa_session      = "bmad-qa-generate-e2e-tests"           # designs API + E2E — absorbs the standalone Playwright step
 chaos           = "fullstack-dev-skills:chaos-engineer"  # DYNAMIC breaking has no bmad equivalent — do NOT swap for a review skill
 static_boosters = ["bmad-review-adversarial-general", "bmad-review-edge-case-hunter"]  # STATIC review adds, folded into A1/A2 (not chaos)
@@ -202,16 +210,19 @@ its whole body is *"Run a `/grilling` session, using `/domain-modeling`,"* and *
   *"about this feature, find all gaps between story / plan / spec and implemented code"* (substitute
   the feature). This is A1's real invocation — it must appear in the transcript.
 
-- **`spec_gap_mode = auto`** (default — keeps the single stop): non-interactive gap analysis via the
-  `spec_gap` reviewer (`bmad-code-review`'s Acceptance-Auditor / `code-reviewer` + `Explore`), with
-  `domain-modeling` recording any ADRs/glossary the gaps imply. Apply `grilling`'s own rule — *a fact
-  you can find in the code, look up; don't ask* — and since the code already exists, almost every
-  gap-question is a verifiable fact. Residual **decision** gaps are carried to the final gate, not
-  asked live.
-- **`spec_gap_mode = grill`** (opt-in — adds one early interactive stop): invoke **`grilling`** (the
-  relentless one-question-at-a-time interview) **+ `domain-modeling`** (writes ADRs/glossary as gaps
-  crystallise) LIVE — the genuine grill-with-docs experience, pointed at story/plan/spec vs the
-  implemented code. qa-phase pauses here, you answer the decision questions, then it resumes.
+- **`spec_gap_mode = grill`** (DEFAULT — the INTERACTIVE grill): invoke **`grilling`** (the relentless
+  one-question-at-a-time interview) **+ `domain-modeling`** (writes ADRs/glossary as gaps crystallise)
+  LIVE — the genuine grill-with-docs experience, pointed at story/plan/spec vs the implemented code. It
+  obeys `grilling`'s rule — *a fact you can find in the code, look up; don't ask* — so the code-verifiable
+  gap-questions it resolves silently; but the genuine **DESIGN / SCOPE decisions the gaps surface are the
+  USER's** — put each to them one at a time **with a recommended answer**, wait for the answer, then
+  resume. This is the one deliberate interactive phase before the ship gate (see the execution contract's
+  stop rule). Answered decisions feed the fix-loop or ride to the gate as the user directs.
+- **`spec_gap_mode = auto`** (opt-in — fully hands-off, no early stop): non-interactive gap analysis via
+  the `spec_gap` reviewer (`bmad-code-review`'s Acceptance-Auditor / `code-reviewer` + `Explore`), with
+  `domain-modeling` recording any ADRs/glossary the gaps imply. Resolve every verifiable fact from code;
+  carry residual **decision** gaps to the final ship gate, not asked live. Use when you want one
+  unattended run.
 - **Goal (either mode):** every story requirement / AC ↔ implemented code → an **AC coverage matrix**
   + a **gap list** (story/plan/spec items with no code; code with no story backing; silently-dropped
   requirements), each grounded in the story; plus any ADRs/glossary from `domain-modeling`.
@@ -581,8 +592,10 @@ Write to the bound path; echo the **Summary** + the gate question inline. Skelet
 - **Shipping extensive fixes without the closing grill** — the first grill validated pre-fix code; a
   reversal or new code path in the Fix loop can birth gaps only a post-fix re-grill catches.
 - Skipping the Skill-invocation gate, or marking it passed from memory instead of the transcript.
-- Stopping for input anywhere before the GATE (except a Preflight halt) — the whole point is one
-  stop; carry blockers to the gate instead.
+- Stopping for input before the GATE for anything OTHER than the A1 grill's design/scope decisions
+  or a Preflight halt — A2/A3/A4, fix-loop, and verify stay hands-off; carry their blockers to the gate.
+  (The A1 grill IS interactive by default — `spec_gap_mode = grill` — and asks the user each real
+  decision; but it must still look facts up from code, never ask what it can verify.)
 - Proceeding past a MISSING dependency or a configured-but-missing skill — halt, don't degrade.
 - Merging, marking a PR ready, or writing to GitHub **before** the gate returns "Ship."
 - **Shipping by hand** (`gh pr merge` / a manual push) instead of firing `superpowers:finishing-a-development-branch`,
