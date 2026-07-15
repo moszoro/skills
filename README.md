@@ -13,6 +13,7 @@ same version. No scattered copies to drift.
 | `skills/qa-phase/` | skill | Autonomous **acceptance-and-ship** QA gauntlet — spec-gap/grill → API+UI+E2E QA-session → chaos → prove-beyond-tests → design-first fix loop → fast-verify → evidence → draft PR + preview AC → **one ship gate** → ship. Dynamic-proof sibling to verification-phase. |
 | `skills/cove/` | skill | Chain-of-Verification — separate generation from verification to cut hallucinations. Implements Meta AI's [CoVe](https://arxiv.org/abs/2309.11495) technique. |
 | `skills/eli5/` | skill | Explain any concept in layered simplicity, 5-year-old → adult, with analogies. |
+| `skills/pixel-perfect-svg/` | skill + CLI | Pixel-perfect raster→SVG extraction — palette-snap → per-colour binary trace (real counter holes) → polygon for type / spline for curves → connected-component speckle cleanup → drop background. Bundles a self-bootstrapping `uv` CLI (`trace_to_svg.py`). Standalone. |
 | `commands/evals/` | command | `evals:eval-tests` — post-implementation test-quality gate scoring uncommitted tests against 22 criteria. |
 | `commands/qa-phase.md` | command | `/qa-phase [scope]` — entrypoint that runs the `qa-phase` skill (add `spec_gap_mode=grill` for the live grill-with-docs interview). |
 
@@ -34,7 +35,7 @@ npx skills add moszoro/skills --global
 
 ```bash
 git clone https://github.com/moszoro/skills ~/Projects/skills
-for s in verification-phase qa-phase cove eli5; do
+for s in verification-phase qa-phase cove eli5 pixel-perfect-svg; do
   ln -sfn ~/Projects/skills/skills/$s ~/.claude/skills/$s
 done
 ln -sfn ~/Projects/skills/commands/evals ~/.claude/commands/evals

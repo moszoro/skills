@@ -1,10 +1,11 @@
 {
   "name": "moszoro-skills",
-  "description": "Maciej Moszoro's personal Claude Code skills — verification-phase, qa-phase, cove, eli5.",
+  "description": "Maciej Moszoro's personal Claude Code skills — verification-phase, qa-phase, cove, eli5, pixel-perfect-svg.",
   "skills": [
     "./skills/verification-phase",
     "./skills/qa-phase",
     "./skills/cove",
-    "./skills/eli5"
+    "./skills/eli5",
+    "./skills/pixel-perfect-svg"
   ]
 }
