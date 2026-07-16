@@ -84,15 +84,26 @@ This skill is a prompt, not a code-enforced workflow — completeness is on you.
    unless the user gave one. Create the directory if missing. Start the report from the
    template in `## Report` below.
 
-4. Run, in order: **Preflight** → the four steps via `## Per-step pipeline` → **Test-quality
+4. **Commit the base under review FIRST if it is uncommitted (BOTH modes — mandatory before any
+   lens or the eval-tests mutation gate).** The default scope is *uncommitted* working-tree
+   changes, and the eval-tests gate (or a manual C5/C17 pass) may **hand-mutate production code and
+   revert it with `git checkout <file>`** — which discards the ENTIRE uncommitted diff, not just the
+   mutation, silently destroying the fix under review. So before running lenses: if `git status
+   --porcelain` shows uncommitted changes in scope, commit them as an atomic base commit
+   (`git commit -am "wip(verify): base under review — <scope>"`), then review that committed state.
+   Now every per-step fix (pipeline step 5) and every mutation-revert lands on top of a committed
+   base — `git checkout <file>` reverts ONLY the mutation, never the fix. (Non-git tree: skip; and
+   see `## Per-step pipeline` step 5 + the eval-tests STEP 1.5 hand-mutation guard.)
+
+5. Run, in order: **Preflight** → the four steps via `## Per-step pipeline` → **Test-quality
    gate** → **Skill-invocation gate** → **Report**. Do not parallelize the steps — later lenses
    read earlier results, and applied fixes change what the next lens sees.
 
-5. **Fast mode.** If `$ARGUMENTS` contains `fast` or `--fast`, run `## Fast mode` INSTEAD of
+6. **Fast mode.** If `$ARGUMENTS` contains `fast` or `--fast`, run `## Fast mode` INSTEAD of
    steps 1-4 above: a reduced pass (built-in `code-review` + context7 + `eval-tests`) that keeps
    the karpathy/cove gating but drops the security lens, the project-rules lens, and the
    transcript skill-invocation gate. Everything else in this Activation (scope, critical-surface
-   detection, report path) still applies.
+   detection, report path, **and the step-4 commit-base guard**) still applies.
 
 ## Preflight — required skills & tools
 
@@ -317,6 +328,10 @@ A reduced, gate-light pass for a **quick static re-check** — after an auto-fix
 another gauntlet's closing gate (this is exactly how `qa-phase` invokes it). It runs two review
 lenses instead of four and drops the transcript gate; it KEEPS the karpathy + cove gating so no
 unverified or over-engineered fix is applied.
+
+0. **Commit-base guard (same as Activation step 4).** If the change under review is uncommitted,
+   commit it as an atomic base commit FIRST — the eval-tests gate below can hand-mutate + `git
+   checkout`-revert, which would otherwise destroy the uncommitted fix. Review the committed state.
 
 1. **Preflight (reduced).** Confirm available this session, halt loud on any MISSING:
    the built-in **`code-review`** skill; context7 MCP tools
