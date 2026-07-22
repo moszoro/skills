@@ -21,6 +21,14 @@ substitution, no reordering):
 3. **`codebase-design`** — review the design through the **deep-module lens**; before concluding,
    grep the real code for evidence (where the seam lives, which port to reuse, is the interface right).
 
+> ⛔ **STEPS ARE REAL ACTIONS IN THIS RUN — NOT NARRATION.** Step 1 MUST be a real `Explore`/`Task` agent
+> dispatch; step 3 MUST be a real `Skill(codebase-design)` invocation; step 2 is real `Grep`/`Bash`/`Read`.
+> Writing "**Step 3 — codebase-design:**" over your *own* inline reasoning and calling it the step is a
+> **VIOLATION and a hallucination of the process** — the point is an *independent* skill reviews the
+> design, not you re-labelling your take. **The Skill-invocation gate below proves, from the session
+> transcript, that steps 1 and 3 were genuine tool calls, and re-runs any you faked.** You cannot pass
+> by describing the gauntlet.
+
 **Why spec-altitude, not plan-altitude:** a spec's failure mode is not a buggy code block (that is
 verify-plan's target) — it is a **decision that was never captured, a factual claim that is false, or a
 seam placed where the code cannot support it**. All three are caught by grounding the spec in the real
@@ -149,6 +157,9 @@ the human; do NOT start building — verify-spec verifies, it does not implement
 
 ## Guardrails
 
+- **Steps 1 and 3 are real tool calls, proven by the transcript gate — never narration.** Labelling your
+  own inline greps/reasoning "Step 3 — codebase-design" is a faked step; the Skill-invocation gate catches
+  it and forces a genuine re-invocation. You cannot pass by describing the gauntlet.
 - **Always all three steps, always in order.** No substitution, no reordering, no skipping.
 - **`source` only rebinds step 1's target**; it never adds/removes a step. Steps 2–3 always ground in
   the real repo.
