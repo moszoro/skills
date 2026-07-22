@@ -91,6 +91,55 @@ before concluding**. Exact prompt:
 > abstractions, and re-invention — each grounded in **file:line**, never assumptions. Give the
 > surgical design-edit for each.
 
+## Skill-invocation gate (un-spoofable — runs after step 3, before the Output)
+
+> ⛔ Step 1 (`Explore` agent) and step 3 (`codebase-design` Skill) MUST be **real tool calls** — writing
+> "Step 3 — codebase-design:" over your own inline reasoning is a faked step. Prove it from the
+> transcript before the report, and re-invoke any missing step as a genuine tool call.
+
+```bash
+python3 - <<'PY'
+import json, glob, os
+CMD = "<command-name>" + "/verify-spec"
+REQ = [
+  ("1 Explore        (Agent)", lambda i: i.get("name") in ("Task","Agent") and ((i.get("input") or {}).get("subagent_type","")=="Explore" or "Explore" in str((i.get("input") or {}).get("description","")))),
+  ("3 codebase-design(Skill)", lambda i: i.get("name")=="Skill" and (i.get("input") or {}).get("skill","").endswith("codebase-design")),
+]
+def load(l):
+    try: return json.loads(l)
+    except Exception: return None
+def items(o):
+    c=(o.get("message",{}) or {}).get("content")
+    return [it for it in c if isinstance(it,dict)] if isinstance(c,list) else ([{"type":"text","text":c}] if isinstance(c,str) else [])
+def is_start(o):
+    for it in items(o):
+        if it.get("type")=="tool_use" and it.get("name")=="Skill" and (it.get("input") or {}).get("skill")=="verify-spec": return True
+        if CMD in (it.get("text") or ""): return True
+    return False
+base=os.path.expanduser("~/.claude/projects")
+tx=lines=start=None
+for f in sorted(glob.glob(base+"/*/*.jsonl"), key=os.path.getmtime, reverse=True):
+    ls=open(f,errors="ignore").read().splitlines()
+    hits=[i for i,l in enumerate(ls) if (o:=load(l)) and is_start(o)]
+    if hits: tx,lines,start=f,ls,hits[-1]; break
+if tx is None: print("GATE-DEGRADED: no verify-spec start marker found; re-run the steps."); raise SystemExit
+seen=[False]*len(REQ)
+for l in lines[start:]:
+    o=load(l)
+    if not o: continue
+    for it in items(o):
+        if it.get("type")!="tool_use": continue
+        for k,(lab,pred) in enumerate(REQ):
+            if not seen[k] and pred(it): seen[k]=True
+for k,(lab,_) in enumerate(REQ): print(("  ✓ " if seen[k] else "  ✗ MISSING — ")+lab)
+print("GATE: PASS" if all(seen) else "GATE: FAIL — re-invoke the MISSING step(s) as REAL tool calls, then re-run this gate")
+PY
+```
+
+If a step is `✗ MISSING`, re-invoke it (Explore agent / `Skill(codebase-design)`) with its exact prompt,
+apply findings, re-run the gate until `GATE: PASS`. Step 2 is grep-based (Bash/Grep/Read) and
+self-evident in the transcript; the gate proves the two fakeable steps.
+
 ## Output
 
 After all three steps, emit a compact report: per-step findings (with file:line evidence), the resolved

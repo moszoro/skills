@@ -19,6 +19,19 @@ exact order, with each step's full prompt inline (no substitution, no reordering
 4. **`nightshift-plan-skills`** — per-task expert-skill review, fixes landed IN the plan + the stamp.
 5. **`evals:eval-tests`** — score the plan's tests; a wrong implementation must not pass them.
 
+> ⛔ **EACH STEP IS A REAL ACTION IN THIS RUN — NOT NARRATION.** Steps 1, 4, 5 MUST be real
+> `Skill(...)` invocations; step 2 a real `Explore`/`Task` agent dispatch; step 3 the conducted grill
+> interview (grill-with-docs is model-un-invocable — you run it *as* the agent, asking the human).
+> Writing a heading like
+> "**Step 1 — code-reviewer:**" over your *own* inline analysis (greps, hand-reasoning) and calling it
+> the step is a **VIOLATION and a hallucination of the process** — the whole point of the gauntlet is
+> that an *independent* skill reviews the plan, not you re-labelling your own take. This is not
+> optional and not a formatting choice: a real code-reviewer pass catches data-loss bugs your inline
+> read misses (observed 2026-07-22: the fake pass missed an empty-body issue-wipe; the real
+> `Skill(code-reviewer)` caught it). **The Skill-invocation gate below proves, from the session
+> transcript, that every step was a genuine tool call, and re-runs any you faked or skipped.** You
+> cannot pass the gauntlet by describing it.
+
 **Dual-use.** The same five steps run for both callers; only two parameters change behaviour:
 
 - **`source`** — `spec` (**default**) | `issue`. Rebinds the **review target**: what the plan is
@@ -72,9 +85,12 @@ the real repository:
 > removed API). Do not trust the plan's own claims — read the code. Report drift as concrete
 > plan-edit corrections.
 
-### Step 3 — `grill-with-docs` (THE ONLY step `interactive` governs)
+### Step 3 — grilling (THE ONLY step `interactive` governs)
 
-Load `grill-with-docs` via the `Skill` tool. Its behaviour forks on `interactive`, **and only here**:
+**Conduct the grill DIRECTLY — do NOT try to `Skill(grill-with-docs)`** (it is
+`disable-model-invocation`; the model cannot call it, so this step is the one you run *as* the agent,
+following the grill-with-docs / `/grilling` + `/domain-modeling` method). Its behaviour forks on
+`interactive`, **and only here**:
 
 - **`interactive=true` (default) — live human grill.** Run the full live interview: relentlessly
   question the human operator about the plan's assumptions, gaps, and risks against **$TARGET**,
@@ -114,6 +130,73 @@ Run the `evals:eval-tests` command over the plan's test code:
 > would a WRONG implementation pass these tests? Trace each test back to an AC or invariant in
 > **$TARGET**. Report gaps and add the missing tests.
 
+## Skill-invocation gate (un-spoofable — runs after step 5, before the Output)
+
+Your narration and your TodoWrite are spoofable; the session transcript is not. Before writing the
+report, **prove from the transcript that each of the five steps was a genuine tool call in-window, and
+re-invoke any that are missing** — never wave a step through on the strength of prose that describes it.
+
+Run this (it locates THIS run's start marker, then checks each required invocation appears after it):
+
+```bash
+python3 - <<'PY'
+import json, glob, os
+# Worktree-proof transcript discovery: scan every project transcript newest-first, pick the one that
+# contains THIS run's start marker (slug-independent). CMD built at runtime so this file never self-matches.
+CMD = "<command-name>" + "/verify-plan"
+REQ = [                                    # (label, predicate) — the 4 INDEPENDENT-tool steps only.
+  ("1 code-reviewer  (Skill)", lambda i: i.get("name")=="Skill" and (i.get("input") or {}).get("skill","").endswith("code-reviewer")),
+  ("2 Explore        (Agent)", lambda i: i.get("name") in ("Task","Agent") and ((i.get("input") or {}).get("subagent_type","")=="Explore" or "Explore" in str((i.get("input") or {}).get("description","")))),
+  ("4 plan-skills    (Skill)", lambda i: i.get("name")=="Skill" and (i.get("input") or {}).get("skill","").endswith("nightshift-plan-skills")),
+  ("5 eval-tests     (Skill)", lambda i: i.get("name")=="Skill" and "eval-tests" in (i.get("input") or {}).get("skill","")),
+]
+# Step 3 (grill-with-docs) is NOT gated here: grill-with-docs is `disable-model-invocation` — the model
+# CANNOT call it via the Skill tool. The grill is an interactive INTERVIEW the agent conducts directly
+# (asks the human one question at a time, or AFK self-grills) — proven by the Q&A exchange, not a tool
+# call. Gating it on a Skill invocation would be an impossible-to-pass gate. Steps 1/2/4/5 ARE
+# independent tool calls that narration can fake — those are what this gate proves.
+def load(l):
+    try: return json.loads(l)
+    except Exception: return None
+def items(o):
+    c=(o.get("message",{}) or {}).get("content")
+    if isinstance(c,list): return [it for it in c if isinstance(it,dict)]
+    if isinstance(c,str): return [{"type":"text","text":c}]
+    return []
+def is_start(o):
+    for it in items(o):
+        if it.get("type")=="tool_use" and it.get("name")=="Skill" and (it.get("input") or {}).get("skill")=="verify-plan": return True
+        if CMD in (it.get("text") or ""): return True
+    return False
+base=os.path.expanduser("~/.claude/projects")
+txs=sorted(glob.glob(base+"/*/*.jsonl"), key=os.path.getmtime, reverse=True)
+tx=lines=start=None
+for f in txs:
+    ls=open(f,errors="ignore").read().splitlines()
+    hits=[i for i,l in enumerate(ls) if (o:=load(l)) and is_start(o)]
+    if hits: tx,lines,start=f,ls,hits[-1]; break
+if tx is None:
+    print("GATE-DEGRADED: no verify-plan start marker found — cannot prove invocations; re-run the steps."); raise SystemExit
+seen=[False]*len(REQ)
+for l in lines[start:]:
+    o=load(l)
+    if not o: continue
+    for it in items(o):
+        if it.get("type")!="tool_use": continue
+        for k,(lab,pred) in enumerate(REQ):
+            if not seen[k] and pred(it): seen[k]=True
+for k,(lab,_) in enumerate(REQ):
+    print(("  ✓ " if seen[k] else "  ✗ MISSING — ")+lab)
+print("GATE: PASS — all five steps were genuine tool calls" if all(seen) else "GATE: FAIL — re-invoke the MISSING step(s) as REAL Skill/Agent calls, then re-run this gate")
+PY
+```
+
+**If any step shows `✗ MISSING`, that step was faked or skipped** (you narrated it instead of calling
+the tool). Re-invoke it as a real `Skill(...)` / `Explore` agent call NOW with its exact step prompt,
+apply its findings, then re-run the gate until it prints `GATE: PASS`. Only then write the Output. A
+prompt-skill cannot hard-*enforce* this (an agent can deviate) — the transcript gate is the
+un-spoofable backstop; for an absolute guarantee, port the gauntlet to a code-enforced Workflow.
+
 ## Output
 
 After all five steps, emit a compact report: per-step findings + fixes applied, the resolved
@@ -123,6 +206,9 @@ Standalone (`interactive=true`) ends by handing the verdict to the human; nights
 
 ## Guardrails
 
+- **Every step is a real tool call, proven by the transcript gate — never narration.** Labelling your
+  own inline greps/reasoning "Step 1 — code-reviewer" is a faked step; the Skill-invocation gate catches
+  it and forces a genuine re-invocation. You cannot pass by describing the gauntlet.
 - **Always all five steps, always in order.** No substitution, no reordering, no skipping — even in
   AFK mode.
 - **`source` only rebinds the target**; it never adds/removes a step. **`interactive` only forks
