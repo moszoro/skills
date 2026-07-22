@@ -1,9 +1,11 @@
 {
   "name": "moszoro-skills",
-  "description": "Maciej Moszoro's personal Claude Code skills — verification-phase, qa-phase, cove, eli5, pixel-perfect-svg.",
+  "description": "Maciej Moszoro's personal Claude Code skills — verification-phase, qa-phase, verify-plan, verify-spec, cove, eli5, pixel-perfect-svg.",
   "skills": [
     "./skills/verification-phase",
     "./skills/qa-phase",
+    "./skills/verify-plan",
+    "./skills/verify-spec",
     "./skills/cove",
     "./skills/eli5",
     "./skills/pixel-perfect-svg"

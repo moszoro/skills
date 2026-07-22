@@ -11,6 +11,8 @@ same version. No scattered copies to drift.
 |------|------|--------------|
 | `skills/verification-phase/` | skill | Layered code-verification gauntlet (preflight → test-quality → smells → security → docs-best-practices → project-rules), karpathy-filtered, cove-escalated, auto-applies survivors. Supports `--fast` (code-review + context7 + eval-tests). |
 | `skills/qa-phase/` | skill | Autonomous **acceptance-and-ship** QA gauntlet — spec-gap/grill → API+UI+E2E QA-session → chaos → prove-beyond-tests → design-first fix loop → fast-verify → evidence → draft PR + preview AC → **one ship gate** → ship. Dynamic-proof sibling to verification-phase. |
+| `skills/verify-plan/` | skill | Dual-use **5-step plan-review** gauntlet — code-reviewer → Explore → grill-with-docs → nightshift-plan-skills → evals:eval-tests — hardens a *code-complete plan* against a source of truth (spec, or the driving issue) before it's applied. `source`/`interactive` knobs. |
+| `skills/verify-spec/` | skill | **3-step spec/design-review** gauntlet — Explore(gaps-vs-decisions) → grep-checkable-constraints(evidence) → codebase-design(deep-module seams) — hardens a *design/spec* against its source of truth before it's built. Spec-altitude sibling of verify-plan; every claim grounded in grepped `file:line`. |
 | `skills/cove/` | skill | Chain-of-Verification — separate generation from verification to cut hallucinations. Implements Meta AI's [CoVe](https://arxiv.org/abs/2309.11495) technique. |
 | `skills/eli5/` | skill | Explain any concept in layered simplicity, 5-year-old → adult, with analogies. |
 | `skills/pixel-perfect-svg/` | skill + CLI | Pixel-perfect raster→SVG extraction — palette-snap → per-colour binary trace (real counter holes) → polygon for type / spline for curves → connected-component speckle cleanup → drop background. Bundles a self-bootstrapping `uv` CLI (`trace_to_svg.py`). Standalone. |
@@ -35,7 +37,7 @@ npx skills add moszoro/skills --global
 
 ```bash
 git clone https://github.com/moszoro/skills ~/Projects/skills
-for s in verification-phase qa-phase cove eli5 pixel-perfect-svg; do
+for s in verification-phase qa-phase verify-plan verify-spec cove eli5 pixel-perfect-svg; do
   ln -sfn ~/Projects/skills/skills/$s ~/.claude/skills/$s
 done
 ln -sfn ~/Projects/skills/commands/evals ~/.claude/commands/evals
