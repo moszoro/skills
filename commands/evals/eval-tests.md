@@ -53,9 +53,11 @@ C5 ("could a WRONG implementation still pass?") and C17 ("no tautological tests"
 
 ## STEP 2: SCORE against 19 criteria
 
-### C1: Source-tag coverage (every AC + invariant tagged; NO untagged tests)
-PASS: 100% of ACs have ≥1 **T1** test (`# AC-N`/`<!-- AC-N -->`); every stated/discovered **invariant** has ≥1 **T2** test (`# INV-XX`/`# NFR-XX`); every remaining test is **T3** (`# QUALITY`). ZERO untagged tests.
-FAIL: any AC with zero T1 tests · any domain invariant with zero T2 tests · **any untagged test** (an untagged chaos test is a FAIL — it must be tagged `# QUALITY`; a reviewer can't distinguish a deliberate edge case from an orphan).
+### C1: Source-tag coverage (every AC + invariant tagged; NO untagged tests; EVERY PLANNED test accounted for)
+PASS: 100% of ACs have ≥1 **T1** test (`# AC-N`/`<!-- AC-N -->`); every stated/discovered **invariant** has ≥1 **T2** test (`# INV-XX`/`# NFR-XX`); every remaining test is **T3** (`# QUALITY`). ZERO untagged tests. **Every test the ticket PLANNED (its `## Tests to write first (RED)` list) carries a unique identifier at its own tier — `INV-<slug>`, `AC-N <qualifier>`, and for T3 `QUALITY-<slug>` — and each planned identifier is present in the tree.**
+FAIL: any AC with zero T1 tests · any domain invariant with zero T2 tests · **any untagged test** (an untagged chaos test is a FAIL — it must be tagged `# QUALITY`; a reviewer can't distinguish a deliberate edge case from an orphan) · **any PLANNED identifier absent from the tree** · **any planned T3 test carrying a bare `QUALITY` with no `-<slug>`**.
+
+> **Why T3 needs an identifier too.** A tier does NOT decide whether a test blocks when it fails — every test blocks when it fails, T3 included; there is no runtime difference. What the tier decides is whether anyone is obliged to notice the test's **absence**. Before this criterion, a planned-but-unwritten T1 was caught ("any AC with zero T1 tests") and a planned-but-unwritten T2 was caught ("any invariant with zero T2 tests"), while a planned-but-unwritten T3 was **nobody's problem** — so a test that was named, described, justified, and then never written left no trace. Giving every planned test an identifier makes "planned but unwritten" checkable at all three tiers by one mechanism, and it keys on the identifier rather than the test NAME, so renaming a test during implementation (normal and healthy — the shipped name is usually better) never produces a false failure. Source incident: 2026-08-05, Aura #773 — `test_only_the_uploader_may_withdraw` was planned as bare `<!-- QUALITY / bezpieczeństwo -->` and silently never written; measured across that project's tickets, 47 of 51 planned tests already carried identifiers and the only 4 without were all T3.
 
 ### C2: RED tests fail on AssertionError only
 PASS: all tests reach assertion line and fail with AssertionError
@@ -121,9 +123,11 @@ PASS: all ACs describe user-observable behavior in Given/When/Then format
 FAIL: any AC describes infrastructure, internal state, or code structure instead of user behavior
 
 ### C12: Three-tier separation — T1 (AC) / T2 (INV·NFR) / T3 (QUALITY), correctly classified
-T1 test user-observable behavior; T2 pin domain invariants + NFRs; T3 are edge/adversarial. Each test tagged to its CORRECT tier.
-PASS: behavioral (T1), invariant (T2), and quality (T3) tests are tier-tagged and correctly classified; infra/structural tests are T2/T3, never wearing an AC (T1) tag
-FAIL: an infrastructure/structural test masquerades as an AC (T1) test · a domain invariant has no T2 test · tiers are mixed indiscriminately
+T1 test user-observable behavior; T2 pin domain invariants + NFRs; T3 are edge/adversarial. Each test tagged to its CORRECT tier. **Check BOTH directions — over-claiming AND under-claiming.**
+PASS: behavioral (T1), invariant (T2), and quality (T3) tests are tier-tagged and correctly classified; infra/structural tests are T2/T3, never wearing an AC (T1) tag; **no access-control / ownership / data-destruction / PHI-handling test sits in T3**
+FAIL: an infrastructure/structural test masquerades as an AC (T1) test · a domain invariant has no T2 test · tiers are mixed indiscriminately · **UNDER-TIERING: a test whose subject is a security, authorization, ownership, or data-destruction control is tagged T3 (`QUALITY`) instead of T2 (`INV`/`SEC`)**
+
+> **The asymmetry this closes.** As originally written, every FAIL condition here caught a test claiming to be MORE important than it is (a structural test wearing a T1 tag). None caught the opposite. That blind spot is the dangerous one: C1's rule "every remaining test is T3" means anything that is neither a stated AC nor a listed invariant lands in T3 **by default**, so a security control nobody thought to list as an invariant is *rule-compliant* at T3 — and T3 is the one tier whose absence nothing checks. A control that guards a destructive path belongs in T2 whether or not someone remembered to write it in the invariant list; if it is genuinely not enforcing a rule (a positive-control baseline, e.g. "a valid reason is accepted"), keep it at T3 and say so explicitly rather than deleting the security wording from its description — a rule that can be satisfied by removing the evidence is worse than no rule. Source incident: 2026-08-05, Aura #773 — an ownership check on a PHI-destroying withdrawal path was tagged `<!-- QUALITY / bezpieczeństwo -->`; the tag named the risk out loud and the criterion still passed it.
 
 ### C13: Three-part proof — every test has precondition + action + assertion
 Each test must: (1) verify precondition, (2) exercise behavior, (3) assert exact values. Tests without preconditions can pass for wrong reasons.
