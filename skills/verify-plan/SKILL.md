@@ -1,6 +1,6 @@
 ---
 name: verify-plan
-description: A dual-use, fixed 5-step plan-review gauntlet — code-reviewer → Explore → grill-with-docs → nightshift-plan-skills → evals:eval-tests — that hardens a code-complete plan against a source of truth (a spec by default, or the driving issue) before it is applied. Use when a human wants to stress-test a plan standalone, or when nightshift wants an AFK plan-review pass. Runs the same five steps in the same order either way; only two knobs change: `source` rebinds WHAT the plan is checked against, and `interactive` decides whether step 3's grill is a live human interview or an AFK self-grill.
+description: 'A dual-use, fixed 5-step plan-review gauntlet — code-reviewer → Explore → grill-with-docs → nightshift-plan-skills → evals:eval-tests — that hardens a code-complete plan against a source of truth (a spec by default, or the driving issue) before it is applied. Use when a human wants to stress-test a plan standalone, or when nightshift wants an AFK plan-review pass. Runs the same five steps in the same order either way; only two knobs change: `source` rebinds WHAT the plan is checked against, and `interactive` decides whether step 3''s grill is a live human interview or an AFK self-grill.'
 disable-model-invocation: false
 ---
 
