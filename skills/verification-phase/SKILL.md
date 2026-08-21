@@ -401,8 +401,16 @@ Write to the bound path and echo the **Summary** inline at the end. Skeleton:
 - {file:line — what changed — which finding}
 
 ## Reported, not applied (needs your call)
-- {file:line — finding — why deferred: cut by karpathy / cove-refuted / judgment}
+- {file:line — finding — why deferred: cut by karpathy / cove-refuted / judgment — **#issue** or "not tracker-worthy: <why>"}
 ```
+
+**Every reported-not-applied item that is a real deferred piece of work (a defect, a missing
+guard, a conformance refactor, a decision the owner must make) MUST be filed as a tracker issue
+before the phase is declared complete** — search for a duplicate, create it with the project's
+required metadata, write the number back beside the line. A karpathy CUT for being noise/polish
+needs no issue; say "not tracker-worthy" and why. A report is not a tracker: the moment the branch
+merges, an un-filed line is unfindable. (Source: 2026-08-21 spec-1018 — a standards finding left
+as "reported, not applied" was filed only when the owner asked.)
 
 ## Red flags
 
@@ -422,3 +430,4 @@ Write to the bound path and echo the **Summary** inline at the end. Skeleton:
   reference — unverified claims; let karpathy cut them.
 - Parallelizing the steps — order matters; applied fixes change later lenses' input.
 - Marking VerificationPhase complete with an open Todo or an unwritten report.
+- A reported-not-applied line that is real deferred work with no issue number beside it.

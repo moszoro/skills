@@ -499,7 +499,9 @@ through.
      branch was merged/PR'd **by hand** (`gh pr merge`, a manual push) instead of firing the ship skill —
      the same substitution as running `pytest` for the evidence gate. Re-ship through the skill, or record
      why it was genuinely N/A. Also confirm the Phase-C **deferral-sync ran** (new/closed deferrals actually
-     mirrored to GitHub during Phase C, plan tasks ticked) — not left for "later."
+     mirrored to GitHub during Phase C, plan tasks ticked) — not left for "later." Concretely: every line
+     under the report's `## Reported, not applied` carries an issue number (or an owner-rejection note);
+     a line without one fails this gate.
 3. **If any required (non-conditionally-skipped) skill is absent:** invoke it now against the relevant
    lens's scope with its canonical prompt, apply + log, and re-run step 1. **Do not proceed to Phase B
    / the GATE until the gate is green.**
@@ -538,6 +540,17 @@ This is the only place QAPhase stops for you.
    plan, reconcile deferred items (note new, close resolved, adjust if scope changed), **mirror
    new/closed deferrals to GitHub issues** (`gh`), and update sprint/story status. Confirm each
    write landed (re-read the doc / `gh issue view`) before moving on.
+   **Every line in the report's `## Reported, not applied` list is a deferred item and MUST become
+   a tracker issue here — ALL of them, not the ones that feel important.** For each: search for a
+   duplicate first, then create the issue with the project's required metadata (milestone,
+   category + state labels, a `## Context`, a trigger), and write the issue number back next to
+   the line in the report and the PR body. The ONLY exceptions: an item the owner explicitly
+   rejected at the gate (record the rejection in the report instead), or an item that already has
+   an issue (cite it). **A Ship with an un-filed reported-not-applied line is an INCOMPLETE Phase C**
+   — the Skill-invocation gate's deferral-sync check (step 2, `finishing-a-development-branch`
+   bullet) verifies it: count the list, count the issue numbers beside it, they match or you are not
+   done. (Source: 2026-08-21 spec-1018 — seven items reported, two filed, three found only when the
+   owner asked "did those get issues?". Filing is part of the run, never a follow-up.)
 2. **Ship — FIRE the skill, do NOT merge by hand.** Invoke `superpowers:finishing-a-development-branch`
    via the `Skill` tool: it verifies tests, marks the PR ready, and completes per its menu (merge/PR).
    **Running `gh pr merge` / pushing the merge yourself is NOT shipping via the skill** — the same
@@ -604,7 +617,7 @@ Write to the bound path; echo the **Summary** + the gate question inline. Skelet
 ## Phase C (if shipped): sprint/deferral sync + finish
 
 ## Reported, not applied (needs your call)
-- {finding — why deferred}
+- {finding — why deferred — **#issue** (filed in Phase C; or "rejected at gate: <why>" / "already #N")}
 ```
 
 ## Red flags
@@ -645,3 +658,7 @@ Write to the bound path; echo the **Summary** + the gate question inline. Skelet
 - Reviewing from memory instead of the real diff + real story.
 - Claiming AC-on-preview pass without having run it against the actual preview this run.
 - Marking QAPhase complete with an open Todo or an unwritten report.
+- **A "Reported, not applied" line with no issue number beside it after a Ship** — a deferred item
+  that lives only in a report or a PR body is unfindable the moment the branch merges. File every
+  one in Phase C (owner-rejected items excepted, recorded as such); "I'll file them later" is the
+  same skip-the-work substitution as merging by hand.
