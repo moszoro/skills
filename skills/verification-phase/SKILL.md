@@ -1,6 +1,6 @@
 ---
 name: verification-phase
-description: Layered code-verification gauntlet with karpathy + cove gating. Use when the user says "run VerificationPhase", "verify this phase", or wants a multi-lens review (preflight → test-quality → smells → security → docs-best-practices → project-rules) that filters every recommendation through karpathy-guidelines, escalates critical findings to cove, and auto-applies the survivors. Supports a `--fast` reduced pass — built-in code-review + context7 best-practices + eval-tests — for quick static re-checks (e.g. as qa-phase's closing gate).
+description: "Layered code-verification gauntlet with karpathy + cove gating. Use when the user says \"run VerificationPhase\", \"verify this phase\", or wants a multi-lens review (preflight → test-quality → smells → security → docs-best-practices → project-rules) that filters every recommendation through karpathy-guidelines, escalates critical findings to cove, and auto-applies the survivors. Supports a `--fast` reduced pass — built-in code-review + context7 best-practices + eval-tests — for quick static re-checks (e.g. as qa-phase's closing gate), and a `--nightshift` pass that runs nightshift's own unattended VERIFY prompt: five lenses inline, ZERO skills loaded, one bounded subagent."
 ---
 
 # VerificationPhase
@@ -18,7 +18,10 @@ A closing **skill-invocation gate** proves from the session transcript that ever
 was actually invoked in-window, and re-invokes any that were skipped. A **`--fast`** variant
 (`## Fast mode`) runs a reduced 3-lens pass — built-in `code-review` + context7 best-practices +
 `eval-tests`, with karpathy/cove still gating — for quick static re-checks after an auto-fix loop
-or as another gauntlet's closing gate.
+or as another gauntlet's closing gate. A **`--nightshift`** variant (`## Nightshift mode`) is the
+opposite trade: it loads **no skills at all** and writes the five lenses out inline, because a
+loaded skill document stays in the conversation and is re-read on every later turn. It is the
+prompt nightshift's own overnight loop runs unattended, reproduced here for a local branch.
 
 **How:** Preflight → a shared per-step pipeline (review → karpathy filter → conditional cove →
 auto-apply → log) for all four lenses → eval-tests gate → skill-invocation gate → a dated report
@@ -64,6 +67,13 @@ This skill is a prompt, not a code-enforced workflow — completeness is on you.
   port this logic to a code-enforced Workflow script with throwing gates.
 - **Do not declare VerificationPhase complete** until every Todo is done, the skill-invocation gate
   is green, and the report is written.
+- **`--nightshift` mode is exempt from every skill requirement above, on purpose.** The three
+  clauses about fresh invocation, the Preflight skill list, and the skill-invocation gate all
+  assume that loading a reviewer skill is free. It is not: cost is `turns x context`, so a skill
+  document loaded on turn 1 is re-paid on every turn after it. Nightshift mode's whole design is
+  to pay that once, in this file's own words, instead of seven times per tick. When it runs, the
+  contract's skill clauses are replaced by `## Nightshift mode`'s own rules — do not "fix" the
+  apparent violation by loading the skills anyway.
 
 ## Activation
 
@@ -99,7 +109,13 @@ This skill is a prompt, not a code-enforced workflow — completeness is on you.
    gate** → **Skill-invocation gate** → **Report**. Do not parallelize the steps — later lenses
    read earlier results, and applied fixes change what the next lens sees.
 
-6. **Fast mode.** If `$ARGUMENTS` contains `fast` or `--fast`, run `## Fast mode` INSTEAD of
+6. **Nightshift mode.** If `$ARGUMENTS` contains `nightshift` or `--nightshift`, run
+   `## Nightshift mode` INSTEAD of everything in steps 1-4, the Preflight, and both gates. From
+   this Activation only the scope resolution (step 1) and the commit-base guard (step 4) still
+   apply — nightshift mode reviews COMMITTED work by definition, so the guard is usually a no-op.
+   `--fast` and `--nightshift` are mutually exclusive; if both appear, ask which was meant.
+
+7. **Fast mode.** If `$ARGUMENTS` contains `fast` or `--fast`, run `## Fast mode` INSTEAD of
    steps 1-4 above: a reduced pass (built-in `code-review` + context7 + `eval-tests`) that keeps
    the karpathy/cove gating but drops the security lens, the project-rules lens, and the
    transcript skill-invocation gate. Everything else in this Activation (scope, critical-surface
@@ -360,6 +376,145 @@ unverified or over-engineered fix is applied.
 
 Use **full mode** (not fast) when the change touches a critical surface and you want the dedicated
 security lens, the project-rules lens, and the un-spoofable transcript gate.
+
+## Nightshift mode (`nightshift` / `--nightshift`)
+
+The prompt nightshift's overnight loop runs as its VERIFY tick, reproduced here so a local branch
+can be verified the same way.
+
+> **Source of truth:** `PROMPT_verify.md` at the root of the `nightshift` repo. That file is what
+> the container actually runs; this section is a copy for interactive use and can drift from it.
+> When the two disagree, `PROMPT_verify.md` wins — re-read it before trusting a detail here. It is not a reduced version of the gauntlet —
+it is the opposite trade, and the trade is measured.
+
+**Why it is shaped like this.** Cost is `turns x context`. Anything pulled into the conversation on
+turn 1 is re-paid on every turn after it, so seven loaded skill documents are paid for hundreds of
+times across one review. Nightshift mode therefore loads **nothing** and writes the lenses out
+below. Two measurements set the design:
+
+- 2026-08-23, same prompt on the same tree: **$7.80** with no mid-turn stop, **$11.49** with seven.
+  A stop ends the query; resuming re-reads the whole conversation from the start.
+- 2026-08-26, a live 5-issue Spec: the VERIFY tick ran **0 skills, 1 subagent, 1 stop, 117
+  messages, $11.66** — against a BUILD phase averaging 6.4 stops per tick on the same run.
+
+Use full mode when you want the dedicated security reviewer, the project-rules lens, cove
+escalation and the transcript gate, and you are not paying per turn. Use nightshift mode to verify
+a branch the way the loop will, or when context budget is the binding constraint.
+
+### 0. Scope
+
+This branch's **committed** changes versus its base. Resolve the base from `$ARGUMENTS` (e.g.
+`--nightshift main`, or a SHA); default to the repo's default branch. Then:
+
+```bash
+git diff --name-only <BASE>...HEAD
+```
+
+Read the actual diff. There are normally NO uncommitted changes here — a default "review the
+working tree" scope would review nothing. The repo's own `CLAUDE.md` / `AGENTS.md` is
+**authoritative** for project rules.
+
+### 1. Do NOT load review skills
+
+Do not invoke `verification-phase`'s own reviewers, `code-reviewer`, `security-reviewer`,
+`karpathy-guidelines`, `cove`, `eval-tests`, `test-master`, or any other review skill. Their briefs
+are written out below. In the container this is enforced by `--disable-slash-commands`; here it is
+discipline, and it is the entire point of the mode. **If you catch yourself reaching for one, that
+is the failure this mode exists to prevent** — the Execution contract's skill clauses do not apply.
+
+### 2. The five lenses — in THIS conversation, one after another, against the diff
+
+1. **correctness** — logic errors, off-by-one and slice/index bounds, inverted or negated
+   conditions, wrong comparison operators, dropped guards, loops that take the wrong match (first
+   vs last), resource leaks, error handling that swallows the case it exists for, and any literal
+   that must match something the rest of the system emits.
+2. **security** — injection, secrets in code or logs, authz/authn gaps, unsafe deserialization,
+   unsafe command construction.
+3. **project-rules** — conformance to this repo's `CLAUDE.md` / `AGENTS.md` / ADRs and documented
+   conventions. **Cite the rule each finding violates; an uncited "rule" is not a finding.**
+4. **tests** — do the tests pin the behaviour the change claims? Weak or tautological assertions,
+   missing cases, a test that would still pass against a wrong implementation.
+5. **build+suite** — run the repo's own build and test suite. Pipe long output through `tail`;
+   keep only the failing assertions.
+
+Record findings in this shape and move on — no commentary:
+
+```
+FINDING file:line | severity | one-line problem | proposed fix
+```
+
+### 3. Bounded work — three rules that keep one review from costing three
+
+1. **Never end your turn while a subagent is running.** Dispatch subagents in ONE message, then
+   keep working in that same turn until their results are back. Do not emit "Waiting." or any other
+   holding message and stop.
+2. **Read each changed file at most once.** You have the diff. Do not re-open a file to
+   double-check a hunk you have already read, and never re-run a command to confirm its output.
+3. **Pipe every command through `tail -n 20`.** Build and test output belongs in context as a
+   verdict plus the failing assertions, never as a transcript.
+
+### 4. One focused re-read, in a fresh subagent
+
+The five lenses above are cheap because they share this conversation. One class of defect reliably
+survives them: the small arithmetic slip inside a hunk you have already read past. A context
+already carrying four other lenses' work skims those.
+
+Dispatch **exactly ONE** subagent, fresh context, and stay in that turn until it reports:
+
+> Read `git diff <BASE>...HEAD` hunk by hunk. For every changed line that indexes, slices,
+> compares, bounds or iterates, state the exact interval it produces and check it against what the
+> surrounding code and comments say it must be. Report ONLY arithmetic/bounds/ordering defects, as
+> `FINDING file:line | one-line problem | proposed fix`, or the single word NONE. Do not edit, do
+> not commit, do not narrate.
+
+Merge its findings with your own before triage.
+
+### 5. Triage, apply, commit
+
+Drop anything speculative, over-engineered, or not grounded in a line of the diff — this is the
+karpathy filter applied by hand, since the skill is not loaded. Apply the survivors and commit
+**per lens**:
+
+```bash
+git commit -m "fix(verify): <lens> — <summary>"
+```
+
+- **NEVER `git commit --no-verify`** — the pre-commit hook stays in force.
+- Stay within this branch. Never `rm -rf` the repo / `.git/` / unverified paths.
+
+### 6. Write nothing for a human to read — except one file
+
+The loop form runs unattended: no narration, no preamble, no progress prose, tool calls and commits
+only. Running it interactively, keep that discipline during the lenses — then echo the report
+inline at the end, since a human IS watching.
+
+Write `VERIFY-REPORT.md` at the repo root (**not** the dated path the other modes bind — this is
+the filename the loop, the PR reviewer, and `verify-tickets.sh` expect):
+
+```markdown
+# VERIFY — <branch>
+verdict: PASS | FAIL
+findings: <n> raised · <n> applied · <n> dropped
+suite: <pass/fail summary line>
+
+## Applied
+- file:line — what was wrong → what changed
+
+## Dropped
+- file:line — what was claimed → why it was not applied
+```
+
+### 7. The completion marker — loop only
+
+In the container the final action is an empty marker commit the loop polls for:
+
+```bash
+git commit --allow-empty -m "chore(nightshift): verify-complete"
+```
+
+**Do NOT write it in a local `--nightshift` run** unless the user asks. On a branch a nightshift
+loop will later pick up, a stray marker tells that loop VERIFY is already done and it will skip the
+phase entirely. Say in the report that the marker was not written.
 
 ## Report
 
