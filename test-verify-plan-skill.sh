@@ -26,11 +26,28 @@ grep -Eiq 'interactive[^\n]*true[^\n]*default[^\n]*false' "$SKILL" \
 # The 5 steps appear in FIXED order:
 #   code-reviewer -> Explore -> grill-with-docs -> nightshift-plan-skills -> evals:eval-tests
 # Anchor on the numbered "### Step N" HEADINGS (not the frontmatter, which lists all five on one line).
-ln_cr="$(grep -nE '^#+ *Step[^\n]*code-reviewer'          "$SKILL" | head -1 | cut -d: -f1)"
-ln_ex="$(grep -nE '^#+ *Step[^\n]*Explore'                "$SKILL" | head -1 | cut -d: -f1)"
-ln_gr="$(grep -nE '^#+ *Step[^\n]*grill-with-docs'        "$SKILL" | head -1 | cut -d: -f1)"
-ln_ps="$(grep -nE '^#+ *Step[^\n]*nightshift-plan-skills' "$SKILL" | head -1 | cut -d: -f1)"
-ln_ev="$(grep -nE '^#+ *Step[^\n]*evals:eval-tests'       "$SKILL" | head -1 | cut -d: -f1)"
+#
+# `_step_ln` exists because the obvious `grep -nE '^#+ *Step…'` is wrong twice over, and the two
+# faults hid each other:
+#   · `^#+` also matches a `#` COMMENT inside a fenced code block. This file has one — line 153,
+#     `# Step 3 (grill-with-docs) is NOT gated here…` — which is prose ABOUT step 3, not step 3.
+#   · the step-3 needle was `grill-with-docs`, but the heading reads "grilling". So the real Step 3
+#     was never matched, `head -1` fell through to that fenced comment, and the assertion compared
+#     153 < 113 and reported the steps OUT OF ORDER while they were in order.
+# A test that fails on correct input is worse than no test: it teaches you to ignore the red.
+# So: skip fenced regions, and require a real `#`-heading line.
+_step_ln() {   # $1 = ERE matched against the heading text → first heading line number, or ""
+  awk -v pat="$1" '
+    /^```/        { inf = !inf; next }
+    inf           { next }
+    /^#+[ \t]*Step/ { if ($0 ~ pat) { print NR; exit } }
+  ' "$SKILL"
+}
+ln_cr="$(_step_ln 'code-reviewer')"
+ln_ex="$(_step_ln 'Explore')"
+ln_gr="$(_step_ln 'grill')"                  # the heading reads "grilling"; the step IS grill-with-docs
+ln_ps="$(_step_ln 'nightshift-plan-skills')"
+ln_ev="$(_step_ln 'evals:eval-tests')"
 for pair in "cr:$ln_cr" "ex:$ln_ex" "gr:$ln_gr" "ps:$ln_ps" "ev:$ln_ev"; do
   n="${pair##*:}"; k="${pair%%:*}"
   [ -n "$n" ] || bad "S-token $k step reference missing from the skill"
