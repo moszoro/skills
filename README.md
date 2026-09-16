@@ -17,6 +17,7 @@ same version. No scattered copies to drift.
 | `skills/cove/` | skill | Chain-of-Verification — separate generation from verification to cut hallucinations. Implements Meta AI's [CoVe](https://arxiv.org/abs/2309.11495) technique. |
 | `skills/eli5/` | skill | Explain any concept in layered simplicity, 5-year-old → adult, with analogies. |
 | `skills/pixel-perfect-svg/` | skill + CLI | Pixel-perfect raster→SVG extraction — palette-snap → per-colour binary trace (real counter holes) → polygon for type / spline for curves → connected-component speckle cleanup → drop background. Bundles a self-bootstrapping `uv` CLI (`trace_to_svg.py`). Standalone. |
+| `skills/watch-reel/` | skill + CLI | Gives Claude eyes + ears for Instagram — a `uv` script (`reel.py`) downloads a reel via `gallery-dl` (your logged-in Chrome cookies), splits it into per-scene JPEG frames, and transcribes the audio locally with `mlx-whisper`. Claude then reads frames + timestamped transcript + caption to answer grounded in what's **shown** and **said**. Standalone. |
 | `commands/evals/` | command | `evals:eval-tests` — post-implementation test-quality gate scoring uncommitted tests against 22 criteria. |
 | `commands/qa-phase.md` | command | `/qa-phase [scope]` — entrypoint that runs the `qa-phase` skill (add `spec_gap_mode=grill` for the live grill-with-docs interview). |
 
@@ -38,7 +39,7 @@ npx skills add moszoro/skills --global
 
 ```bash
 git clone https://github.com/moszoro/skills ~/Projects/skills
-for s in verification-phase qa-phase verify-plan verify-spec cove eli5 pixel-perfect-svg; do
+for s in verification-phase qa-phase verify-plan verify-spec design-tests cove eli5 pixel-perfect-svg watch-reel; do
   ln -sfn ~/Projects/skills/skills/$s ~/.claude/skills/$s
 done
 ln -sfn ~/Projects/skills/commands/evals ~/.claude/commands/evals
@@ -66,7 +67,9 @@ loud unless all deps resolve. `install.sh` installs the verification-phase set; 
 (for `--fast`), `eli5`, plus `gh` + a Playwright runner. It **prefers project-native skills** (e.g.
 Aura's `bmad-*`) via a per-project `.claude/qa-phase.config.toml`, falling back to the generic ones.
 
-`cove` and `eli5` are standalone — `npx skills add` is enough for those.
+`cove` and `eli5` are standalone — `npx skills add` is enough for those. **`watch-reel`** is standalone
+too, but needs three external tools on your `PATH`: `gallery-dl`, `mlx-whisper` (Apple-silicon), and
+`ffmpeg`, plus a logged-in Chrome (it reads your cookies to download the reel).
 
 ## Credits
 
