@@ -1,41 +1,67 @@
 # skills
 
-> Maciej Moszoro's personal Claude Code skills — **one source of truth.**
+> Maciej Moszoro's personal Claude Code skills — kept in one place.
 
-Edit a skill once, here; every consumer (your local `~/.claude`, CI images, teammates) pulls the
-same version. No scattered copies to drift.
+Each skill lives here once. Your laptop, your CI images, and your teammates all install from this
+repo, so nobody ends up with a stale copy.
 
-## What's here
+New to skills? A **skill** teaches Claude Code a repeatable job. You turn one on by typing its name,
+like `/qa-phase`. A **command** is a shorter shortcut that runs a skill for you.
 
-| path | kind | what it does |
-|------|------|--------------|
-| `skills/verification-phase/` | skill | Layered code-verification gauntlet (preflight → test-quality → smells → security → docs-best-practices → project-rules), karpathy-filtered, cove-escalated, auto-applies survivors. Supports `--fast` (code-review + context7 + eval-tests). |
-| `skills/qa-phase/` | skill | Autonomous **acceptance-and-ship** QA gauntlet — spec-gap/grill → API+UI+E2E QA-session → chaos → prove-beyond-tests → design-first fix loop → fast-verify → evidence → draft PR + preview AC → **one ship gate** → ship. Dynamic-proof sibling to verification-phase. |
-| `skills/verify-plan/` | skill | Dual-use **5-step plan-review** gauntlet — code-reviewer → Explore → grill-with-docs → nightshift-plan-skills → evals:eval-tests — hardens a *code-complete plan* against a source of truth (spec, or the driving issue) before it's applied. `source`/`interactive` knobs. |
-| `skills/verify-spec/` | skill | **3-step spec/design-review** gauntlet — Explore(gaps-vs-decisions) → grep-checkable-constraints(evidence) → codebase-design(deep-module seams) — hardens a *design/spec* against its source of truth before it's built. Spec-altitude sibling of verify-plan; every claim grounded in grepped `file:line`. |
-| `skills/design-tests/` | skill | Design and write **failing** tests (TDD/BDD/DDD) — hand-computed expected values, Given/When/Then, domain-boundary discipline, 3-tier source tagging (T1 AC / T2 INV·NFR / T3 QUALITY **with its own identifier**), SOLID/TAUTOLOGICAL feasibility rating. Companion to `evals:eval-tests`. |
-| `skills/cove/` | skill | Chain-of-Verification — separate generation from verification to cut hallucinations. Implements Meta AI's [CoVe](https://arxiv.org/abs/2309.11495) technique. |
-| `skills/eli5/` | skill | Explain any concept in layered simplicity, 5-year-old → adult, with analogies. |
-| `skills/pixel-perfect-svg/` | skill + CLI | Pixel-perfect raster→SVG extraction — palette-snap → per-colour binary trace (real counter holes) → polygon for type / spline for curves → connected-component speckle cleanup → drop background. Bundles a self-bootstrapping `uv` CLI (`trace_to_svg.py`). Standalone. |
-| `skills/watch-reel/` | skill + CLI | Gives Claude eyes + ears for Instagram — a `uv` script (`reel.py`) downloads a reel via `gallery-dl` (your logged-in Chrome cookies), splits it into per-scene JPEG frames, and transcribes the audio locally with `mlx-whisper`. Claude then reads frames + timestamped transcript + caption to answer grounded in what's **shown** and **said**. Standalone. |
-| `commands/evals/` | command | `evals:eval-tests` — post-implementation test-quality gate scoring uncommitted tests against 22 criteria. |
-| `commands/qa-phase.md` | command | `/qa-phase [scope]` — entrypoint that runs the `qa-phase` skill (add `spec_gap_mode=grill` for the live grill-with-docs interview). |
+## What's inside
+
+### Ship better code
+
+| Skill | What it does for you |
+|-------|----------------------|
+| `verification-phase` | Runs your finished code past a stack of reviewers — test quality, code smells, security holes, docs, your own project rules. It keeps only the findings that matter and applies the safe fixes for you. Add `--fast` for a quick pass. |
+| `qa-phase` | Hands-off QA before you ship. It hunts for gaps against the spec, writes and runs API + UI + end-to-end tests, tries hard to break the code, fixes what it finds, and opens a draft pull request. Then it stops **once** and asks you: ship, hold, or fix more. |
+| `verify-plan` | Checks a build-ready plan **before** anyone writes the code. It compares the plan to the spec or ticket, greps your real repo to catch drift, and flags weak tests — while a fix is still a cheap edit. |
+| `verify-spec` | Checks a design or spec **before** it turns into a plan. It finds missing decisions and gaps, and backs every note with a real `file:line` from your code, not a guess. |
+| `design-tests` | Helps you write good **failing** tests first (TDD). Real hand-computed expected values, clear Given/When/Then, and a check that each test actually proves something. |
+
+### Everyday helpers
+
+| Skill | What it does for you |
+|-------|----------------------|
+| `cove` | Cuts made-up answers by splitting "write it" from "check it." Based on Meta AI's [Chain-of-Verification](https://arxiv.org/abs/2309.11495). |
+| `eli5` | Explains anything in plain steps — 5-year-old simple up to expert — with analogies. |
+
+### Standalone tools
+
+| Skill | What it does for you |
+|-------|----------------------|
+| `pixel-perfect-svg` | Turns a PNG or screenshot into a clean SVG. It snaps colours, traces each shape (keeps the holes in letters), removes speckles, and drops the background. Ships with a ready-to-run CLI. |
+| `watch-reel` | Lets Claude actually watch an Instagram reel. It downloads the video, grabs a frame per scene, and transcribes the audio — then answers about what is **shown** and **said**. Ships with a CLI. |
+
+### Commands (shortcuts)
+
+| Command | What it does |
+|---------|--------------|
+| `evals:eval-tests` | Scores your just-written tests against 22 quality checks. |
+| `/qa-phase [scope]` | Runs the `qa-phase` skill. Add `spec_gap_mode=grill` for a live question-and-answer gap hunt. |
 
 ## Install
 
-**Full setup (recommended) — `verification-phase` needs more than the skills** (see [Dependencies](#dependencies)). One command installs the skills, the `evals` command, *and* every external dependency:
+Pick one:
+
+**1. Full setup (recommended).** `verification-phase` and `qa-phase` need a few extra tools (see
+[What some skills need](#what-some-skills-need)). This one command installs the skills, the `evals`
+command, **and** those extra tools:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/moszoro/skills/main/install.sh | bash
 ```
 
-**Skills only (quick)** — the three skills, bare, via the [`skills`](https://github.com/vercel-labs/skills) CLI (does **not** install the `evals` command or `verification-phase`'s external deps):
+**2. Skills only (quick).** The skills, bare, via the [`skills`](https://github.com/vercel-labs/skills)
+CLI. This does **not** install the `evals` command or the extra tools the big review skills need:
 
 ```bash
 npx skills add moszoro/skills --global
 ```
 
-**Edit-in-place (this repo stays the source of truth)** — clone once, then symlink into `~/.claude`:
+**3. Edit-in-place.** Clone once, then link the skills into `~/.claude`. Now editing a skill here also
+edits the live copy — `git commit && git push` and it is live everywhere:
 
 ```bash
 git clone https://github.com/moszoro/skills ~/Projects/skills
@@ -46,34 +72,34 @@ ln -sfn ~/Projects/skills/commands/evals ~/.claude/commands/evals
 ln -sfn ~/Projects/skills/commands/qa-phase.md ~/.claude/commands/qa-phase.md
 ```
 
-Now editing `~/.claude/skills/cove/SKILL.md` edits the repo working tree — `git commit && git push` and it's live everywhere.
+## What some skills need
 
-## Dependencies
+Most skills work on their own. Two big ones call other skills and tools. They check everything is
+present at startup and stop with a clear message if a piece is missing.
 
-`verification-phase` and `qa-phase` are gauntlets that orchestrate other skills — their Preflight fails
-loud unless all deps resolve. `install.sh` installs the verification-phase set; `npx skills add` does **not**:
+**`verification-phase` and `qa-phase`** need these. `install.sh` sets them all up; `npx skills add`
+does not:
 
-| dependency | source | provided by |
-|---|---|---|
-| `cove`, `evals:eval-tests` | this repo | `install.sh` (command needs a copy — it's not a skill) |
+| Needs | Where it comes from | Installed by |
+|-------|---------------------|--------------|
+| `cove`, `evals:eval-tests` | this repo | `install.sh` (the command needs its own copy — it is not a skill) |
 | `fullstack-dev-skills:code-reviewer` / `security-reviewer` | `jeffallan/claude-skills` marketplace | `install.sh` step 3 |
 | `andrej-karpathy-skills:karpathy-guidelines` | `forrestchang/andrej-karpathy-skills` marketplace | `install.sh` step 3 |
 | context7 MCP | `@upstash/context7-mcp` | `install.sh` step 4 (needs `CONTEXT7_API_KEY`) |
 
-**`qa-phase`** additionally orchestrates (its Preflight lists them, fail-loud): `grilling` +
-`domain-modeling` (A1 grill), `design-tests` + `codebase-design` (fix loop), `fullstack-dev-skills:`
-`{test-master, playwright-expert, chaos-engineer, + the full *-expert set for GREEN}`,
-`superpowers:{verification-before-completion, finishing-a-development-branch}`, `verification-phase`
-(for `--fast`), `eli5`, plus `gh` + a Playwright runner. It **prefers project-native skills** (e.g.
-Aura's `bmad-*`) via a per-project `.claude/qa-phase.config.toml`, falling back to the generic ones.
+**`qa-phase`** also calls: `grilling` + `domain-modeling` (gap hunt), `design-tests` +
+`codebase-design` (fix loop), several `fullstack-dev-skills` experts (test-master, playwright-expert,
+chaos-engineer, and the full `*-expert` set for writing fixes), `superpowers` (finish-a-branch,
+verify-before-done), `verification-phase`, `eli5`, plus `gh` and a Playwright runner. If your project
+has its own native versions (for example a `bmad-*` set), it uses those first — point it at them with a
+`.claude/qa-phase.config.toml` file.
 
-`cove` and `eli5` are standalone — `npx skills add` is enough for those. **`watch-reel`** is standalone
-too, but needs three external tools on your `PATH`: `gallery-dl`, `mlx-whisper` (Apple-silicon), and
-`ffmpeg`, plus a logged-in Chrome (it reads your cookies to download the reel).
+**`watch-reel`** needs three tools on your `PATH` — `gallery-dl`, `mlx-whisper` (Apple silicon), and
+`ffmpeg` — plus a Chrome you are logged in to (it reads your cookies to download the reel).
 
 ## Credits
 
-`cove` implements Meta AI's **Chain-of-Verification** (Dhuliawala et al., 2023). The skill wrapper is
-mine; the technique is theirs.
+`cove` is my wrapper around Meta AI's **Chain-of-Verification** (Dhuliawala et al., 2023). The
+technique is theirs; the skill is mine.
 
 MIT © Maciej Moszoro
