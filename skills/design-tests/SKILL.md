@@ -1,6 +1,6 @@
 ---
 name: design-tests
-description: Design and write failing tests (TDD/BDD/DDD) with hand-computed expected values, behavioral Given/When/Then format, domain-boundary/interface discipline, 3-tier source tagging (T1 AC / T2 INV·NFR / T3 QUALITY), and feasibility rating (SOLID/TAUTOLOGICAL/REDUNDANT). Executes directly — no agent spawning. Use when you need well-designed tests for any feature, bugfix, invariant, or refactor where correctness matters. Triggers on "design tests", "write tests first", "TDD", "BDD", "red phase", "failing tests", "test this".
+description: Design and write failing tests first (TDD/BDD). Hand-computed expected values, behavioral Given/When/Then, tests through the public interface, 3-tier source tagging, and a SOLID/TAUTOLOGICAL/REDUNDANT feasibility rating. Executes directly — no agent spawning. Use when you need well-designed tests for a feature, bugfix, invariant, or refactor. Triggers on "design tests", "write tests first", "TDD", "BDD", "red phase", "failing tests", "test this".
 ---
 
 <objective>
@@ -18,7 +18,7 @@ Acceptance Criteria AND domain invariants drive everything. **Every test is sour
 - **T2 `# INV-XX` / `# NFR-XX`** — Domain-invariant / non-functional tests (a rule that must always hold — a single-writer seam, a No-Orphan guarantee, a concurrency/CAS property, an authz boundary, a latency budget). On failure: a safety/compliance violation, not just an AC miss.
 - **T3 `# QUALITY-<slug>`** — Edge cases, adversarial/chaos, robustness, perf baselines. NOT an AC — but STILL TAGGED, **and with its own identifier**, e.g. `# QUALITY-withdraw-ownership`. On failure: a review finding, not an AC miss.
 
-The older "adversarial tests are left untagged" rule is REJECTED — untagged tests read as "someone forgot," and a reviewer can't tell a deliberate edge case from an orphan. Tag it `# QUALITY-<slug>` (or `# INV-XX` if it pins an invariant).
+Tag adversarial / edge tests too — `# QUALITY-<slug>` (or `# INV-XX` if it pins an invariant). An untagged test reads as "someone forgot," and a reviewer can't tell a deliberate edge case from an orphan.
 
 **A tier does NOT decide whether a failing test blocks — every failing test blocks, T3 included. The tier decides whether anyone is obliged to notice the test's ABSENCE.** A planned-but-unwritten T1 is caught ("every AC has ≥1 T1 test") and a planned-but-unwritten T2 is caught ("every invariant has ≥1 T2 test") — so a planned T3 needs an identifier of its own, or its absence is checkable by nothing and a test that was named, described and justified can simply never get written. Key on the identifier, never on the test NAME: renaming a test while implementing it is normal and the shipped name is usually better.
 
