@@ -69,8 +69,8 @@ no clipped shapes, flat baselines. Playwright + Chromium is reliable for this.
 
 ## Options reference
 
-`-p/--palette` (repeat) · `-n/--colors` (auto-palette size) · `--bg` (repeat) ·
-`--auto-bg` · `--polygon` (repeat) · `--spline` (repeat) · `--mode` ·
-`--largest` (repeat) · `--min-area` · `--crop L,T,R,B` · `--upscale` ·
-`--filter-speckle` · `--corner-threshold` · `--path-precision` · `--preview` ·
-`--preview-bg`.
+For the full, always-current flag list (the worked example above shows the common ones):
+
+```bash
+uv run trace_to_svg.py --help
+```

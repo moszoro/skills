@@ -6,13 +6,13 @@ description: Apply Chain-of-Verification to reduce hallucinations. Use when accu
 <objective>
 Apply Meta AI's Chain-of-Verification (CoVe) technique to answer questions with higher accuracy by separating generation from verification, preventing confirmation bias.
 
-**CRITICAL:** Before running CoVe, ensure 100% clarity on what the user is asking through clarifying questions.
+**CRITICAL:** Before running CoVe, get the question clear enough to restate it precisely — ask only if it is genuinely ambiguous.
 </objective>
 
 <process>
 ## Step 0: Clarify the Question (MANDATORY)
 
-Before attempting any answer, use AskUserQuestion to ensure complete understanding. Ask until you have FULL clarity.
+If the question is genuinely ambiguous, use AskUserQuestion. Stop asking once you can restate it precisely.
 
 **What to clarify:**
 - Ambiguous terms or scope
@@ -32,7 +32,7 @@ Use AskUserQuestion tool with 1-4 targeted questions:
 - User confirms your understanding is correct
 - No remaining "it depends" scenarios
 
-Only proceed to Step 1 after achieving 100% clarity.
+Only proceed to Step 1 once you can restate the question precisely.
 
 ---
 
@@ -104,14 +104,6 @@ Coffee has many health benefits including improved mental alertness, antioxidant
 **Step 4 - Final Verified Answer:**
 Coffee offers health benefits including improved alertness, antioxidants, and reduced risk of type 2 diabetes and Parkinson's. However, benefits depend on preparation method (filtered preferred) and individual factors. Some populations should limit or avoid coffee: pregnant women, those with anxiety disorders, certain cardiac conditions, or acid reflux.
 </example>
-
-<when_to_use>
-- Complex factual questions
-- Claims requiring accuracy
-- Research synthesis
-- Medical/legal/financial information
-- Anything where being wrong matters
-</when_to_use>
 
 <success_criteria>
 - Step 0: Question fully clarified via AskUserQuestion before proceeding
