@@ -17,7 +17,7 @@ It works the same way `watch` does for YouTube — the difference is Instagram i
 
 - The user pastes an **instagram.com** reel, post, or profile URL and asks anything about it.
 - The user points at a **local** reel file (`.mp4`) and asks about its content, hook, pacing, or on-screen text.
-- The user wants to **reverse-engineer** a reel's structure/style.
+- The user wants to **reverse-engineer** a reel's structure/style (apply the bundled `references/PATTERN.md` formula).
 - They type `/reel <url> [question]`.
 
 ## How to invoke
@@ -41,7 +41,7 @@ The script prints a `WORKDIR`, the `POST CAPTION`, the `TRANSCRIPT (srt)` path, 
 
 **Step 3 — Read every frame.** Read all the listed frame paths **in one message** (parallel `Read` calls) so you see them together, in order. The Read tool renders JPEGs as images.
 
-**Step 4 — answer.** You now have three evidence streams: the **frames** (what's on screen), the **transcript** (`audio.srt`, timestamped — what's said), and the **post caption** (the written text of the post). Answer the user's question citing what you saw and heard. For a reverse-engineering ask, break down the hook (first 1-3s), the beat structure, the on-screen text treatment, and the edit pacing.
+**Step 4 — answer.** You now have three evidence streams: the **frames** (what's on screen), the **transcript** (`audio.srt`, timestamped — what's said), and the **post caption** (the written text of the post). Answer the user's question citing what you saw and heard. For a reverse-engineering ask, break down the hook (first 1-3s), the beat structure, the on-screen text treatment, and the edit pacing — using the 7-beat reel formula in `references/PATTERN.md` (hook molds: `references/HOOKS.md`).
 
 **Step 5 — clean up.** The script prints its workdir. If the user won't ask follow-ups, `rm -rf` it. If they might, leave it (you already have the frames + transcript in context, so don't re-run for a follow-up).
 
