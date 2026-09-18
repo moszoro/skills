@@ -1,7 +1,7 @@
 ---
 name: verify-spec
 description: 'Use after a spec is grilled and before you build it — the spec-altitude sibling of verify-plan (verify-plan checks a plan''s code blocks; verify-spec checks a design''s decisions, constraints, and seams). A fixed 3-step design-review gauntlet — Explore(gaps-vs-decisions) → grep-checkable-constraints(evidence) → codebase-design(deep-module review) — that hardens a spec against its source of truth (the decisions that produced it, or the driving issue) before it is built, grounding every claim in grepped file:line evidence, never the spec''s own narration.'
-disable-model-invocation: true
+disable-model-invocation: false  # nightshift-design-stages step 11 calls Skill(/verify-spec) — must stay model-invocable
 ---
 
 # verify-spec
