@@ -1,6 +1,6 @@
 ---
 name: verification-phase
-description: "Layered code-verification gauntlet with karpathy + cove gating. Use when the user says \"run VerificationPhase\", \"verify this phase\", or wants a multi-lens review (preflight → test-quality → smells → security → docs-best-practices → project-rules) that filters every recommendation through karpathy-guidelines, escalates critical findings to cove, and auto-applies the survivors. Supports a `--fast` reduced pass — built-in code-review + context7 best-practices + eval-tests — for quick static re-checks (e.g. as qa-phase's closing gate), and a `--nightshift` pass that runs nightshift's own unattended VERIFY prompt: five lenses inline, ZERO skills loaded, one bounded subagent."
+description: "Layered code-verification gauntlet with karpathy + cove gating. Use when the user says \"run VerificationPhase\", \"verify this phase\", or wants a multi-lens review (preflight → test-quality → smells → security → docs-best-practices → project-rules) that filters every recommendation through karpathy-guidelines, escalates critical findings to cove, and auto-applies the survivors. Supports a `--fast` reduced static pass and a `--nightshift` unattended inline pass."
 ---
 
 # VerificationPhase

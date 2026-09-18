@@ -1,6 +1,6 @@
 ---
 name: qa-phase
-description: Autonomous acceptance-and-ship QA gauntlet. Use when the user says "run QAPhase", "qa this feature/story/branch", or wants a hands-off run that proves a finished story end-to-end — spec-gap analysis, an API+UI+E2E QA session, chaos/adversarial probing, a design-first auto-fix loop, a fast verification pass, live preview AC tests — then STOPS at a single ship gate. Complements verification-phase (static review); this is dynamic proof. Fans out as a multi-agent Workflow when orchestration is available.
+description: Autonomous acceptance-and-ship QA gauntlet. Use when the user says "run QAPhase", "qa this feature/story/branch", or wants a hands-off run that proves a finished story end-to-end, then STOPS at a single ship gate. Complements verification-phase (static review); this is dynamic proof.
 ---
 
 # QAPhase
