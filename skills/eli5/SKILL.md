@@ -1,6 +1,6 @@
 ---
 name: eli5
-description: "Explain any concept in layered simplicity — from 5-year-old to adult, with real-world analogies. Use this skill whenever the user says 'ELI5', 'explain like I'm 5', 'explain simply', 'dumb it down', 'what is X in simple terms', 'help me understand', 'break this down for me', or asks for a simple/beginner-friendly explanation of anything — code, science, business, math, architecture, whatever the topic."
+description: "Explain any concept in layered simplicity — from 5-year-old to adult, with real-world analogies. Use whenever the user says 'ELI5', 'explain like I'm 5', 'explain simply', 'dumb it down', 'in simple terms', or 'break this down', or asks for a simple, beginner-friendly explanation."
 ---
 
 # ELI5 — Explain Like I'm 5
