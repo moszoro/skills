@@ -7,6 +7,10 @@ description: Design and write failing tests first (TDD/BDD). Hand-computed expec
 Design and write failing tests directly. Read source code, design each test with hand-computed expected values, rate feasibility (SOLID/TAUTOLOGICAL/REDUNDANT), then implement only SOLID designs as failing RED tests with stubs. Test through the module's PUBLIC INTERFACE (the seam), assert exact values, tag every test with its tier.
 
 Direct execution — no agent spawning. You ARE the test designer and writer. Do NOT spawn Agent() or use subagent_type. Follow the workflow steps yourself.
+
+**START HERE: the process is `workflows/design-and-write.md`. Open it before anything else** — its step 1 loads three skills and forbids reading files until they are loaded, and its `<required_reading>` names two reference files. **Everything below in THIS file is reference, not the process.** A run that applies these principles without opening that workflow is a partial run, and it must say which steps it skipped rather than report as if the skill ran. (This clause exists because that is what happened on 2026-09-19: the principles read as self-sufficient, `<routing>` sat alone at the very bottom after 170 lines, and the language expert its step 1 requires was never loaded.)
+
+**Design-time branch.** When there is no code to write — a spec or design stage, where the deliverable is the test DESIGN and a build loop writes the tests later — workflow steps 5 and 6 (implement, run, verify red) cannot run, and neither can the `/evals:eval-tests` gate, which scores produced tests from `git diff`. Take steps 1 to 4, and say plainly that 5, 6 and the gate are out of scope for this run and why. A design-time run still owes every step-4 obligation: hand-computed values, a tier tag per test, the port-conformance test where a fake and a real adapter both exist, a fixture/golden test, and a property-based test for the trickiest invariant where the tooling is installed. Skipping those is not "design-time", it is an incomplete design — they are `/evals:eval-tests` C15, C1, C21 and C7, and a design can already fail all four.
 </objective>
 
 <essential_principles>
@@ -170,11 +174,13 @@ If ACs are missing, I'll derive them from the code and confirm with you. I'll al
 <reference_guides>
 - references/design-checklist.md — feasibility + DDD/seam/real-DB checks for SOLID/TAUTOLOGICAL/REDUNDANT rating
 - references/agent-prompts.md — tdd-red prompt template (replace {placeholders})
-- Companion gate: `evals:eval-tests` scores the produced tests against C1–C22 (mutation-grounded). Design toward passing it.
+- Companion gate: **`/evals:eval-tests` is a COMMAND, not a skill** — it lives at this repo's `commands/evals/eval-tests.md` and installs to `~/.claude/commands/evals/eval-tests.md`. Searching the skill tree for it finds nothing, and on 2026-09-19 a session concluded from exactly that search that the gate did not exist. It does. It scores PRODUCED tests against C1–C22 (mutation-grounded) by reading `git diff`, so it runs AFTER implementation. Design toward it regardless: **C1** (every test tier-tagged, every planned test carrying its own identifier), **C7** (≥1 fixture/golden test), **C15** (derivation comments on the assertions) and **C21** (a conformance test wherever a port has BOTH a fake and a real adapter, and DB-guaranteed behaviour proven on the real database) are the four a DESIGN can already fail.
 </reference_guides>
 
 <routing>
-After receiving input, follow workflows/design-and-write.md
+After receiving input, follow workflows/design-and-write.md — **read it in full, including its
+`<required_reading>`, before designing anything.** It is the process; this file is its reference.
+See the design-time branch in `<objective>` when there is no code to write.
 </routing>
 
 <success_criteria>
