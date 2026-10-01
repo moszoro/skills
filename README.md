@@ -66,7 +66,7 @@ edits the live copy — `git commit && git push` and it is live everywhere:
 
 ```bash
 git clone https://github.com/moszoro/skills ~/Projects/skills
-for s in verification-phase qa-phase verify-plan verify-spec design-tests cove eli5 pixel-perfect-svg watch-reel; do
+for s in verification-phase qa-phase verify-plan verify-spec design-tests cove eli5 pixel-perfect-svg watch-reel reddit-voc; do
   ln -sfn ~/Projects/skills/skills/$s ~/.claude/skills/$s
 done
 ln -sfn ~/Projects/skills/commands/evals ~/.claude/commands/evals
@@ -97,6 +97,9 @@ has its own native versions (for example a `bmad-*` set), it uses those first �
 
 **`watch-reel`** needs three tools on your `PATH` — `gallery-dl`, `mlx-whisper` (Apple silicon), and
 `ffmpeg` — plus a Chrome you are logged in to (it reads your cookies to download the reel).
+
+**`reddit-voc`** needs `uv` and the [`apify`](https://docs.apify.com/cli) CLI, logged in (`apify login`). Each
+run spends Apify credits: the skill shows the worst-case price first and waits for your yes.
 
 ## Credits
 
