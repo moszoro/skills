@@ -33,6 +33,7 @@ like `/qa-phase`. A **command** is a shorter shortcut that runs a skill for you.
 |-------|----------------------|
 | `pixel-perfect-svg` | Turns a PNG or screenshot into a clean SVG. It snaps colours, traces each shape (keeps the holes in letters), removes speckles, and drops the background. Ships with a ready-to-run CLI. |
 | `watch-reel` | Lets Claude actually watch an Instagram reel. It downloads the video, grabs a frame per scene, and transcribes the audio — then answers about what is **shown** and **said**. Ships with a CLI. |
+| `reddit-voc` | Gets full Reddit threads for customer research when Reddit blocks Claude. It finds threads through Google or keyword search, scrapes them with Apify (it tells you the price first), and writes one file per thread so every quote has an author, a date and a link. Ships with a CLI. |
 
 ### Commands (shortcuts)
 
