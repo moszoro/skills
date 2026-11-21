@@ -1,0 +1,13 @@
+{
+  "name": "show-me-draw",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild draw.src.mjs --bundle --platform=node --format=esm --minify --legal-comments=eof --outfile=draw.mjs",
+    "test": "node --test draw.test.mjs"
+  },
+  "devDependencies": {
+    "beautiful-mermaid": "1.1.3",
+    "esbuild": "0.25.10"
+  }
+}
